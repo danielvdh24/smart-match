@@ -1,0 +1,23 @@
+# Python-related
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+*.swp
+
+# Django-related
+db.sqlite3
+*.log
+*.pot
+staticfiles/
+
+# Virtual Environments
+venv/
+resume_env/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# System files
+.DS_Store
+Thumbs.db
