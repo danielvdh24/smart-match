@@ -1,15 +1,34 @@
+import os
+import sys
+
+#add the project root directory to Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+#set up Django settings
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'resume_classification.settings')
+
+import django
+django.setup()
+
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import classification_report
+from classifier.models import Resume
 import pickle
 
 #load the dataset
 def load_data():
-    #update the path to your dataset
-    data = pd.read_csv('classifier/data/resume.csv')
+    resumes = Resume.objects.all()
+
+    data = {'Resume_str': [], 'Category': []}
+    for resume in resumes:
+        data['Resume_str'].append(resume.resume_text)
+        data['Category'].append(resume.category)
+
     return data
+
 
 #preprocess the data
 def preprocess_data(data):
