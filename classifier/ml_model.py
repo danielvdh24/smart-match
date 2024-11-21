@@ -8,7 +8,7 @@ import pickle
 #load the dataset
 def load_data():
     #update the path to your dataset
-    data = pd.read_csv('classifier/data/resume.csv')
+    data = pd.read_csv('classifier/data/Resume.csv')
     return data
 
 #preprocess the data
