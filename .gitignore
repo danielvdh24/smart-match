@@ -6,7 +6,6 @@ __pycache__/
 *.swp
 
 # Django-related
-db.sqlite3
 *.log
 *.pot
 staticfiles/
