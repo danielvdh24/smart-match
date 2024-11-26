@@ -1,0 +1,12 @@
+{% extends "base.html" %} {% block title %} Job Matcher {% endblock %}
+{% block content %}
+<div class="container">
+    <form class="formBox">
+        <form action="/submit-form" method="POST">
+            <label class="formName" for="resumeStr">Your Resume</label>
+            <textarea class="formInput" type="text" id="resumeStr" name="resumeStr" placeholder="Paste your entire resume here" required></textarea>
+            <button class="formButton" type="submit">Submit</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

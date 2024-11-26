@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      {% block title %}
+        Job Matcher
+      {% endblock %}
+    </title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'stylesheet.css' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Bungee&family=Lato:wght@900&family=Rubik:wght@300;500&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div class="logo">Job Matcher</div>
+    <nav class="navBar">
+      <div class="navItem"></div>
+    </nav>
+    <div>{% block content %} {% endblock %}</div>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js" ></script>
+  </body>
+</html>
