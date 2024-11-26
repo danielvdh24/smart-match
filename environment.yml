@@ -9,8 +9,6 @@ dependencies:
   - python=3.8.20
   - setuptools=75.1.0
   - sqlite=3.45.3
-  - vc=14.40
-  - vs2015_runtime=14.40.33807
   - wheel=0.44.0
   - pip:
       - asgiref==3.8.1
