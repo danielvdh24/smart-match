@@ -18,28 +18,20 @@ from sklearn.metrics import classification_report
 from classifier.models import Resume
 import pickle
 
-#load the dataset
-def load_data():
-    resumes = Resume.objects.all()
 
+
+#TRAIN AND SAVE THE MODEL
+
+
+def train_model(version="1.0.0"):
+    resumes = Resume.objects.all()
     data = {'Resume_str': [], 'Category': []}
     for resume in resumes:
         data['Resume_str'].append(resume.resume_text)
         data['Category'].append(resume.category)
 
-    return data
-
-
-#preprocess the data
-def preprocess_data(data):
-    X = data['Resume_str'] 
-    y = data['Category']  
-    return X, y
-
-#train the model
-def train_model():
-    data = load_data()
-    X, y = preprocess_data(data)
+    X = data['Resume_str']
+    y = data['Category']
 
     #convert text to numerical features using TF-IDF
     vectorizer = TfidfVectorizer(stop_words='english', max_features=1000)
@@ -48,22 +40,110 @@ def train_model():
     #split the dataset into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(X_tfidf, y, test_size=0.2, random_state=42)
 
-    #train a naive bayes classifier
+    #train a naive Bayes classifier
     model = MultinomialNB()
     model.fit(X_train, y_train)
 
-    #evaluate the model
-    y_pred = model.predict(X_test)
-    print(classification_report(y_test, y_pred, zero_division=0))
-
-    #save the model and vectorizer for later use
-    with open('classifier/model.pkl', 'wb') as model_file:
+    #save the model and vectorizer with version tags
+    model_filename = f"classifier/model/model_v{version}.pkl"
+    vectorizer_filename = f"classifier/vectorizer/vectorizer_v{version}.pkl"
+    with open(model_filename, 'wb') as model_file:
         pickle.dump(model, model_file)
-    with open('classifier/vectorizer.pkl', 'wb') as vectorizer_file:
+    with open(vectorizer_filename, 'wb') as vectorizer_file:
         pickle.dump(vectorizer, vectorizer_file)
 
-    print("Model and vectorizer saved successfully!")
+    print(f"Model and vectorizer saved as version {version}!")
+    return X_test, y_test, model, vectorizer  #return test data for evaluation
 
-#run the training process if this script is executed directly
+
+
+
+#EVALUATE A SAVED MODEL ON THE TEST SET
+
+
+def evaluate_model(version="1.0.0"):
+    model_filename = f"classifier/model/model_v{version}.pkl"
+    vectorizer_filename = f"classifier/vectorizer/vectorizer_v{version}.pkl"
+
+    if not os.path.exists(model_filename) or not os.path.exists(vectorizer_filename):
+        print(f"Model version {version} not found. Please train the model first.")
+        return
+
+    #load model and vectorizer
+    with open(model_filename, 'rb') as model_file:
+        model = pickle.load(model_file)
+    with open(vectorizer_filename, 'rb') as vectorizer_file:
+        vectorizer = pickle.load(vectorizer_file)
+
+    #load data
+    resumes = Resume.objects.all()
+    data = {'Resume_str': [], 'Category': []}
+    for resume in resumes:
+        data['Resume_str'].append(resume.resume_text)
+        data['Category'].append(resume.category)
+
+    X = data['Resume_str']
+    y = data['Category']
+
+    #transform data using the loaded vectorizer
+    X_tfidf = vectorizer.transform(X)
+    X_train, X_test, y_train, y_test = train_test_split(X_tfidf, y, test_size=0.2, random_state=42)
+
+    #evaluate the model
+    y_pred = model.predict(X_test)
+    print("\nModel Evaluation:")
+    print(classification_report(y_test, y_pred, zero_division=0))
+
+
+
+
+
+#PREDICT THE CATEGORY OF A SINGLE RESUME
+
+
+def predict_single_resume(resume_text, version="1.0.0"):
+    model_filename = f"classifier/model/model_v{version}.pkl"
+    vectorizer_filename = f"classifier/vectorizer/vectorizer_v{version}.pkl"
+
+    if not os.path.exists(model_filename) or not os.path.exists(vectorizer_filename):
+        print(f"Model version {version} not found. Please train the model first.")
+        return None
+
+    #load model and vectorizer
+    with open(model_filename, 'rb') as model_file:
+        model = pickle.load(model_file)
+    with open(vectorizer_filename, 'rb') as vectorizer_file:
+        vectorizer = pickle.load(vectorizer_file)
+
+    #transform the input resume text
+    X_input = vectorizer.transform([resume_text])
+
+    #predict the category
+    prediction = model.predict(X_input)
+    return prediction[0]
+
+
+
+
+#command line interface for training, evaluating, and predicting
 if __name__ == "__main__":
-    train_model()
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Train, evaluate, or predict using the model")
+    parser.add_argument("action", choices=["train", "evaluate", "predict"])
+    parser.add_argument("--version", default="1.0.0")
+    parser.add_argument("--resume")
+
+    args = parser.parse_args()
+
+    if args.action == "train":
+        train_model(version=args.version)
+    elif args.action == "evaluate":
+        evaluate_model(version=args.version)
+    elif args.action == "predict":
+        if not args.resume:
+            print("Please provide a resume text using --resume.")
+        else:
+            category = predict_single_resume(resume_text=args.resume, version=args.version)
+            if category:
+                print(f"Predicted Category: {category}")
