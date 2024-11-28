@@ -167,7 +167,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Train, evaluate, or predict using the model")
-    parser.add_argument("action", choices=["train", "evaluate", "predict"])
+    parser.add_argument("action", choices=["train", "evaluate", "predict", "predict-top-5"])
     parser.add_argument("--version", default="1.0.0")
     parser.add_argument("--resume")
 
@@ -184,3 +184,12 @@ if __name__ == "__main__":
             category = predict_single_resume(resume_text=args.resume, version=args.version)
             if category:
                 print(f"Predicted Category: {category}")
+    elif args.action == "predict-top-5":
+        if not args.resume:
+            print("Please provide a resume text using --resume.")
+        else:
+            top_5 = predict_top_5_resume(resume_text=args.resume, version=args.version)
+            if top_5:
+                print("Top 5 Predictions:")
+                for prediction in top_5:
+                    print(f"- {prediction}")
