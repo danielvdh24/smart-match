@@ -125,12 +125,49 @@ def predict_single_resume(resume_text, version="1.0.0"):
 
 
 
+#PREDICT THE TOP 5 CATEGORY OF A SINGLE RESUME
+
+
+def predict_top_5_resume(resume_text, version="1.0.0"):
+    model_filename = f"classifier/model/model_v{version}.pkl"
+    vectorizer_filename = f"classifier/vectorizer/vectorizer_v{version}.pkl"
+
+    if not os.path.exists(model_filename) or not os.path.exists(vectorizer_filename):
+        print(f"Model version {version} not found. Please train the model first.")
+        return None
+
+    #load model and vectorizer
+    with open(model_filename, 'rb') as model_file:
+        model = pickle.load(model_file)
+    with open(vectorizer_filename, 'rb') as vectorizer_file:
+        vectorizer = pickle.load(vectorizer_file)
+
+    #transform the input resume text
+    X_input = vectorizer.transform([resume_text])
+
+    #get the probabilities for each category
+    probabilities = model.predict_proba(X_input)[0]
+    classes = model.classes_
+
+    #combine classes with their probabilities
+    top_5 = sorted(zip(classes, probabilities), key=lambda x: x[1], reverse=True)[:5]
+
+    #format result
+    prediction = [
+        f"{category.replace('-', ' ')}: {probability * 100:.2f}%"
+        for category, probability in top_5
+    ]
+    return prediction
+
+
+
+
 #command line interface for training, evaluating, and predicting
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Train, evaluate, or predict using the model")
-    parser.add_argument("action", choices=["train", "evaluate", "predict"])
+    parser.add_argument("action", choices=["train", "evaluate", "predict", "predict-top-5"])
     parser.add_argument("--version", default="1.0.0")
     parser.add_argument("--resume")
 
@@ -147,3 +184,12 @@ if __name__ == "__main__":
             category = predict_single_resume(resume_text=args.resume, version=args.version)
             if category:
                 print(f"Predicted Category: {category}")
+    elif args.action == "predict-top-5":
+        if not args.resume:
+            print("Please provide a resume text using --resume.")
+        else:
+            top_5 = predict_top_5_resume(resume_text=args.resume, version=args.version)
+            if top_5:
+                print("Top 5 Predictions:")
+                for prediction in top_5:
+                    print(f"- {prediction}")
