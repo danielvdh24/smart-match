@@ -13,10 +13,16 @@
     <div class="results-container">
         <h2 class="result-title">Matched Job Titles</h2>
         {% if predictions %}
-        <p class="result-text">{{ predictions }}</p>
-        {% else %}
-        <p class="result-text">No matched job titles yet. Please submit your resume.</p>
-        {% endif %}
+    <div class="result-text">
+        <ul class="no-bullets">
+            {% for prediction in predictions %}
+                <li>{{ prediction }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% else %}
+    <p class="result-text">No matched job titles yet. Please submit your resume.</p>
+    {% endif %}
     </div>
 </div>
 {% endblock %}
