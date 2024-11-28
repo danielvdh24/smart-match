@@ -15,18 +15,35 @@ body, html {
     font-family: "Bebas Neue", sans-serif;
     font-weight: 400;
     font-style: normal;
-    font-size: 200%;
+    font-size: 280%;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-.container {
+.container-wrapper {
+    display: flex;
+    justify-content: center;
     width: 100%;
+}
+
+.container {
+    width: 45%;
     height: 86vh;
     display: flex;
     align-items: center;
     flex-direction: column;
+}
+
+.results-container {
+    width: 20%;
+    height: 72vh;
+    display: flex;
+    flex-direction: column;
+    align-items: left;
+    position: relative;
+    top: 25pt;
+    border-radius: 15pt;
 }
 
 .formBox {
@@ -43,12 +60,15 @@ body, html {
     border-radius: 15pt;
 }
 
-.formName {
+.formName, .result-title {
     display: block;
     font-family: "Bebas Neue", sans-serif;
     font-weight: 400;
     font-style: normal;
-    font-size: 130%;
+    font-size: 150%;
+}
+
+.formName {
     padding-top: 10pt;
     padding-bottom: 10pt;
 }
@@ -58,10 +78,10 @@ body, html {
     border-radius: 15pt;
     width: 90%;
     height: 70%;
-    border: 5px solid rgb(97, 6, 97);
+    border: 5px solid rgb(198, 116, 245);
     outline: none;
     transition: all 0.3s ease;
-    caret-color: transparent;
+    caret-color: black;
     font-family: "Rubik", sans-serif;
     font-style: normal;
     padding: 10pt;
@@ -70,7 +90,7 @@ body, html {
 }
 
 .formInput:focus {
-    border-color: rgb(198, 116, 245);
+    border-color: rgb(97, 6, 97);
     box-shadow: 0 0 5px rgba(140, 2, 145, 0.5);
 }
 
@@ -78,8 +98,21 @@ body, html {
     margin-top: 10pt;
     margin-bottom: 10pt;
     border-radius: 5pt;
+    font-size: 125%;
     width: 100pt;
-    height: 50pt;
-    background-color: rgb(218, 15, 140);
+    border: none;
+    outline: none;
+    height: 45pt;
+    font-family: 'Bebas Neue', sans-serif;
+    cursor: pointer;
+    background-color: #da0f8c;
 }
-  
+
+.formButton:hover {
+    background-color: #a1156c;
+}
+
+.result-text {
+    font-family: "Rubik", sans-serif;
+    font-style: normal;
+}
