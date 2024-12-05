@@ -8,7 +8,8 @@ class ClassifierAdminConfig(AdminConfig):
 
 # Create a custom AdminSite
 class ClassifierAdminArea(admin.AdminSite):
-    site_header = "Classifier admin area"
+    site_header = "Admin Area Login"
+    login_template = 'admin/login.html'
 
 # Create an instance of the custom AdminSite
 classifier_site = ClassifierAdminArea(name="ClassifierAdmin")

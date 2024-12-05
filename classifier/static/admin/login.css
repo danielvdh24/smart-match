@@ -1,0 +1,63 @@
+:root {
+    --bg: linear-gradient(135deg, #e0f7fa, #ffffff);
+    --form-bg: rgba(255, 255, 255, 0.7);
+    --text-color: #333333;
+    --accent-color: #ff5722;
+    --border-color: rgba(255, 255, 255, 0.8);
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background: var(--bg);
+    color: var(--text-color);
+    margin: 0;
+}
+
+.login #container {
+    backdrop-filter: blur(15px);
+    background: var(--form-bg);
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 400px;
+    max-height: 300px;
+    margin: 100px auto;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.login #header h1 {
+    text-align: center;
+    font-size: 1.8rem;
+}
+
+.login #header {
+    border-radius: 30px;
+}
+
+.login .form-row input {
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 10px;
+    width: calc(100% - 22px);
+    margin-bottom: 15px;
+    color: black;
+}
+
+.login .submit-row input {
+    background: var(--accent-color);
+    color: #000000;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 25px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.login .submit-row input:hover {
+    background: #e64a19;
+}
+
+.theme-toggle {
+    display: none;
+}
