@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load i18n static %}
 
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static "admin/login.css" %}">
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static "admin/css/login.css" %}">
 {{ form.media }}
 {% endblock %}
 
@@ -16,6 +16,8 @@
 {% block content_title %}{% endblock %}
 
 {% block nav-breadcrumbs %}{% endblock %}
+
+{% block title-modelchoices-container %}{% endblock %}
 
 {% block content %}
 {% if form.errors and not form.non_field_errors %}
