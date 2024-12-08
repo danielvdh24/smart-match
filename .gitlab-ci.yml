@@ -5,18 +5,22 @@ stages:
 
 variables:
   DOCKER_IMAGE: "pipeline-testing"
+  DOCKER_BUILDKIT: 1
 
 build:
   stage: build
   services:
-    - docker:dind
+    - docker:dind:latest
+  variables:
+    DOCKER_HOST: "unix:///var/run/docker.sock"
   script:
-    - docker build -t $DOCKER_IMAGE .
+    - docker buildx create --use
+    - docker buildx build --load -t $DOCKER_IMAGE .
 
 test:
   stage: test
   services:
-    - docker:dind
+    - docker:dind:latest
   script:
     - docker run --rm $DOCKER_IMAGE
 
