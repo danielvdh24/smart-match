@@ -1,9 +1,9 @@
-{% extends "base.html" %} 
+{% extends "base.html" %}
 {% block title %} Job Matcher {% endblock %}
 {% block content %}
 <div class="container-wrapper">
     <div class="container">
-        <form class="formBox" action="{% url 'classify_resume' %}" method="POST">
+        <form class="formBox" id="resumeForm">
             <label class="formName" for="resumeStr">Your Resume</label>
             {% csrf_token %}
             <textarea class="formInput" type="text" id="resumeStr" name="resumeStr" placeholder="Paste your entire resume here" required></textarea>
@@ -12,17 +12,54 @@
     </div>
     <div class="results-container">
         <h2 class="result-title">Matched Job Titles</h2>
-        {% if predictions %}
-    <div class="result-text">
-        <ul class="no-bullets">
-            {% for prediction in predictions %}
-                <li>{{ prediction }}</li>
-            {% endfor %}
-        </ul>
-    </div>
-    {% else %}
-    <p class="result-text">No matched job titles yet. Please submit your resume.</p>
-    {% endif %}
+        <div class="result-text" id="resultsList">
+            <p>No matched job titles yet. Please submit your resume.</p>
+        </div>
     </div>
 </div>
+<script>
+    function getCsrfToken() {
+        const csrfCookie = document.cookie.split("; ").find(row => row.startsWith("csrftoken="));
+        return csrfCookie ? csrfCookie.split("=")[1] : null;
+    }
+
+    document.getElementById("resumeForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const resumeStr = document.getElementById("resumeStr").value;
+        const csrfToken = getCsrfToken();
+
+        if (!resumeStr.trim()) {
+            alert("Please paste your resume.");
+            return;
+        }
+
+        try {
+            const response = await fetch("{% url 'classify_resume' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": csrfToken,
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: new URLSearchParams({ resumeStr }),
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to fetch predictions.");
+            }
+
+            const data = await response.json();
+            const resultsList = document.getElementById("resultsList");
+
+            if (data.predictions && data.predictions.length > 0) {
+                resultsList.innerHTML = `<ul class="no-bullets">${data.predictions.map(prediction => `<li>${prediction}</li>`).join('')}</ul>`;
+            } else {
+                resultsList.innerHTML = `<p>No matched job titles found. Please try again.</p>`;
+            }
+        } catch (error) {
+            console.error(error);
+            document.getElementById("resultsList").innerHTML = `<p>Error fetching job titles. Please try again later.</p>`;
+        }
+    });
+</script>
 {% endblock %}
