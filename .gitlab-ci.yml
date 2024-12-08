@@ -11,12 +11,16 @@ variables:
 # Build the Docker image with the application and tests
 build:
   stage: build
+  tags:
+    - docker-build   # Add the tag for the runner to pick this job
   script:
     - docker build -t $DOCKER_IMAGE .
 
 # Run tests inside the Docker container
 test:
   stage: test
+  tags:
+    - docker         # Use the runner tagged with 'docker'
   services:
     - docker:dind  # Docker-in-Docker to allow running Docker commands
   script:
@@ -24,10 +28,10 @@ test:
   after_script:
     - docker logs $CONTAINER_NAME
 
-# Deploy stage (not done right now)
+# Deploy stage (optional for your use case)
 deploy:
   stage: deploy
   script:
-    - echo "Deploy to staging or production here"
+    - echo "Deploy to staging or production here (optional)"
   only:
     - master
