@@ -21,7 +21,7 @@ build:
 test:
   stage: test
   tags:
-    - docker  # Runner tag for the test stage
+    - docker-build  # Runner tag for the test stage
   services:
     - docker:dind  # Use Docker-in-Docker
   script:
