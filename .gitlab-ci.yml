@@ -21,7 +21,7 @@ build:
   services:
     - docker:dind  # Docker-in-Docker service to allow Docker commands in the pipeline
   tags:
-    - docker-build  # Specify the runner tag for Docker
+    - docker  # Specify the runner tag for Docker
   variables:
     DOCKER_TLS_CERTDIR: ""  # Disable TLS certificates
     DOCKER_HOST: "unix:///var/run/docker.sock"  # Use Unix socket
