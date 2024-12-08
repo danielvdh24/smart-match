@@ -3,46 +3,49 @@ stages:
   - test
   - deploy
 
-# Define environment variables if needed
+# Define environment variables
 variables:
-  DOCKER_IMAGE: "pipeline-testing"      # Docker image name
-  CONTAINER_NAME: "pipeline-testing"     # Docker container name
+  DOCKER_IMAGE: "pipeline-testing"        # Docker image name
+  CONTAINER_NAME: "pipeline-testing"       # Docker container name
   DJANGO_SETTINGS_MODULE: "resume_classification.settings"
-  DOCKER_DRIVER: "overlay2"             # Docker driver for optimal container performance
-  DOCKER_TLS_CERTDIR: "/certs"          # Required for Docker-in-Docker
-  DOCKER_HOST: "tcp://docker:2375"      # Explicit Docker daemon connection (Docker-in-Docker)
-  DOCKER_BUILDKIT: 1                   # Enable BuildKit (if supported)
-  DOCKER_TLS_VERIFY: "1"                # Enable TLS verification
-  DOCKER_HOST_INTERNAL: "docker"       # Set internal Docker hostname (to avoid DNS issues)
+  DOCKER_DRIVER: "overlay2"               # Docker driver for optimal performance
+  DOCKER_TLS_CERTDIR: ""                  # Disable Docker TLS certificates
+  DOCKER_HOST: "unix:///var/run/docker.sock"  # Use Unix socket for Docker communication
+  DOCKER_BUILDKIT: 1                      # Enable BuildKit (optional)
+  DOCKER_TLS_VERIFY: ""                   # Disable TLS verification
 
 # Build the Docker image with the application and tests
 build:
   stage: build
   services:
-    - docker:dind  # Docker-in-Docker service for Docker daemon inside the container
+    - docker:dind  # Docker-in-Docker service to allow Docker commands in the pipeline
   tags:
-    - docker-build   # Specify the runner tag for Docker
+    - docker-build  # Specify the runner tag for Docker
+  variables:
+    DOCKER_TLS_CERTDIR: ""  # Disable TLS certificates
+    DOCKER_HOST: "unix:///var/run/docker.sock"  # Use Unix socket
   script:
     - docker info  # Check Docker configuration and confirm Docker is running
-    - docker build -t $DOCKER_IMAGE .  # Build the Docker image with the name `pipeline-testing`
+    - docker build -t $DOCKER_IMAGE .  # Build the Docker image
 
 # Run tests inside the Docker container
 test:
   stage: test
   services:
-    - docker:dind  # Docker-in-Docker service for Docker daemon inside the container
+    - docker:dind  # Docker-in-Docker service to allow Docker commands in the pipeline
   tags:
-    - docker         # Use the runner tagged with 'docker' for testing
+    - docker        # Use the runner tagged with 'docker' for testing
   script:
     - docker info  # Check Docker configuration
     - docker run --name $CONTAINER_NAME --rm $DOCKER_IMAGE  # Run the Docker container and execute the tests
   after_script:
     - docker logs $CONTAINER_NAME  # Output logs from the container if needed
 
-# Deploy stage (not done right now)
+# Deploy stage (not right now)
 deploy:
   stage: deploy
   script:
-    - echo "Deploy to staging or production here "
+    - echo "Deploy to staging or production here"
   only:
     - master  # Run deployment only on the master branch for now
+
