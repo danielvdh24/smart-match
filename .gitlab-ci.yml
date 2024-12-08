@@ -13,6 +13,7 @@ variables:
   DOCKER_HOST: "unix:///var/run/docker.sock"  # Use Unix socket for Docker communication
   DOCKER_BUILDKIT: 1                      # Enable BuildKit (optional)
   DOCKER_TLS_VERIFY: ""                   # Disable TLS verification
+  DOCKER_CONTEXT: "default"               # Force use of the default Docker context
 
 # Build the Docker image with the application and tests
 build:
@@ -26,6 +27,8 @@ build:
     DOCKER_HOST: "unix:///var/run/docker.sock"  # Use Unix socket
   script:
     - docker info  # Check Docker configuration and confirm Docker is running
+    - docker context use $DOCKER_CONTEXT  # Force use of the default context
+    - sudo service docker start  # Ensure Docker daemon is started
     - docker build -t $DOCKER_IMAGE .  # Build the Docker image
 
 # Run tests inside the Docker container
@@ -35,8 +38,13 @@ test:
     - docker:dind  # Docker-in-Docker service to allow Docker commands in the pipeline
   tags:
     - docker        # Use the runner tagged with 'docker' for testing
+  variables:
+    DOCKER_TLS_CERTDIR: ""  # Disable TLS certificates
+    DOCKER_HOST: "unix:///var/run/docker.sock"  # Use Unix socket
   script:
     - docker info  # Check Docker configuration
+    - docker context use $DOCKER_CONTEXT  # Force use of the default context
+    - sudo service docker start  # Ensure Docker daemon is started
     - docker run --name $CONTAINER_NAME --rm $DOCKER_IMAGE  # Run the Docker container and execute the tests
   after_script:
     - docker logs $CONTAINER_NAME  # Output logs from the container if needed
