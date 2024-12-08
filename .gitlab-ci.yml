@@ -5,28 +5,36 @@ stages:
 
 variables:
   DOCKER_IMAGE: "pipeline-testing"
-  DOCKER_BUILDKIT: 1
+  DOCKER_HOST: "tcp://docker:2375"
+  DOCKER_TLS_CERTDIR: ""  # Disable TLS verification for `docker:dind`
 
 build:
   stage: build
+  tags:
+    - docker-build  # Runner tag for the build stage
   services:
-    - docker:dind:latest
-  variables:
-    DOCKER_HOST: "unix:///var/run/docker.sock"
+    - docker:dind  # Use Docker-in-Docker
   script:
-    - docker buildx create --use
-    - docker buildx build --load -t $DOCKER_IMAGE .
+    - docker info  # Verify Docker is running and accessible
+    - docker build -t $DOCKER_IMAGE .  # Build the Docker image
 
 test:
   stage: test
+  tags:
+    - docker  # Runner tag for the test stage
   services:
-    - docker:dind:latest
+    - docker:dind  # Use Docker-in-Docker
   script:
-    - docker run --rm $DOCKER_IMAGE
+    - docker info  # Verify Docker is running and accessible
+    - docker run --rm $DOCKER_IMAGE  # Run the container to execute tests
 
 deploy:
   stage: deploy
+  tags:
+    - docker  # Runner tag for the deploy stage
+  services:
+    - docker:dind  # Use Docker-in-Docker
   script:
-    - echo "Deploy to staging or production here"
+    - echo "Deploy our application here"
   only:
-    - master
+    - master  # Deploy only on the master branch
