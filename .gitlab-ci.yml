@@ -33,7 +33,7 @@ build:
     - docker context use $DOCKER_CONTEXT  # Force use of the default context
     - sudo service docker start  # Ensure Docker daemon is started
     - docker build -t $DOCKER_IMAGE .  # Build the Docker image
-  privileged: true  # Enable privileged mode for Docker-in-Docker
+  
 
 # Run tests inside the Docker container
 test:
