@@ -3,63 +3,26 @@ stages:
   - test
   - deploy
 
-# Define environment variables
 variables:
-  DOCKER_IMAGE: "pipeline-testing"        # Docker image name
-  CONTAINER_NAME: "pipeline-testing"       # Docker container name
-  DJANGO_SETTINGS_MODULE: "resume_classification.settings"
-  DOCKER_DRIVER: "overlay2"               # Docker driver for optimal performance
-  DOCKER_TLS_CERTDIR: ""                  # Disable Docker TLS certificates
-  DOCKER_HOST: "unix:///var/run/docker.sock"  # Use Unix socket for Docker communication
-  DOCKER_BUILDKIT: 1                      # Enable BuildKit (optional)
-  DOCKER_TLS_VERIFY: ""                   # Disable TLS verification
-  DOCKER_CONTEXT: "default"               # Force use of the default Docker context
+  DOCKER_IMAGE: "pipeline-testing"
 
-# Build the Docker image with the application and tests
 build:
   stage: build
-  image: alpine:latest                   # Using Alpine image, but need to install Docker CLI
   services:
-    - docker:dind  # Docker-in-Docker service to allow Docker commands in the pipeline
-  tags:
-    - docker  # Specify the runner tag for Docker
-  variables:
-    DOCKER_TLS_CERTDIR: ""  # Disable TLS certificates
-    DOCKER_HOST: "unix:///var/run/docker.sock"  # Use Unix socket
-  before_script:
-    - apk add --no-cache docker  # Install Docker client in Alpine
+    - docker:dind
   script:
-    - docker info  # Check Docker configuration and confirm Docker is running
-    - docker context use $DOCKER_CONTEXT  # Force use of the default context
-    - sudo service docker start  # Ensure Docker daemon is started
-    - docker build -t $DOCKER_IMAGE .  # Build the Docker image
-  
+    - docker build -t $DOCKER_IMAGE .
 
-# Run tests inside the Docker container
 test:
   stage: test
-  image: alpine:latest                   # Using Alpine image, but need to install Docker CLI
   services:
-    - docker:dind  # Docker-in-Docker service to allow Docker commands in the pipeline
-  tags:
-    - docker        # Use the runner tagged with 'docker' for testing
-  variables:
-    DOCKER_TLS_CERTDIR: ""  # Disable TLS certificates
-    DOCKER_HOST: "unix:///var/run/docker.sock"  # Use Unix socket
-  before_script:
-    - apk add --no-cache docker  # Install Docker client in Alpine
+    - docker:dind
   script:
-    - docker info  # Check Docker configuration
-    - docker context use $DOCKER_CONTEXT  # Force use of the default context
-    - sudo service docker start  # Ensure Docker daemon is started
-    - docker run --name $CONTAINER_NAME --rm $DOCKER_IMAGE  # Run the Docker container and execute the tests
-  after_script:
-    - docker logs $CONTAINER_NAME  # Output logs from the container if needed
+    - docker run --rm $DOCKER_IMAGE
 
-# Deploy stage (not right now)
 deploy:
   stage: deploy
   script:
     - echo "Deploy to staging or production here"
   only:
-    - master  # Run deployment only on the master branch for now
+    - master
