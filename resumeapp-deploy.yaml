@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resumeapp
+  labels:
+    app: resumeapp
+spec:
+  replicas: 3  # Number of pod replicas
+  selector:
+    matchLabels:
+      app: resumeapp
+  template:
+    metadata:
+      labels:
+        app: resumeapp
+    spec:
+      containers:
+        - name: resumeapp
+          image: gcr.io/focused-sprite-443911-p2/resumeapp:latest
+          ports:
+            - containerPort: 8000
+---
