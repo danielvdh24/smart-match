@@ -99,16 +99,16 @@
         <!-- Content -->
         <div id="content" class="{% block coltype %}colM{% endblock %}">
           {% block pretitle %}{% endblock %}
-
           {% block title-modelchoices-container %}
           <div id="title-modelchoices-container">
               {% block content_title %}{% if title %}<h1>{{ title }}</h1>{% endif %}{% endblock %}
+              {% if title != "Logged out" %}
               <div id="modelchoices-div">
-                <button type="button">Train</button>
+                <button id="train-btn-new-model" type="button">Train</button>
                 <button type="button">Evaluate</button>
                 <div class="dropdown">
                   <button class="dropbtn">--- Select Version ---</button>
-                  <div class="dropdown-content">
+                  <div class="dropdown-content" id="dropdown-content">
                     <a href="#">Link 1</a>
                     <a href="#">Link 2</a>
                     <a href="#">Link 3</a>
@@ -118,11 +118,10 @@
                     <a href="#">Link 7</a>
                 </div>
                 </div> 
-              </div>
+              </div>    
+              {% endif %}
           </div>
           {% endblock %}
-
-
           {% block content_subtitle %}{% if subtitle %}<h2>{{ subtitle }}</h2>{% endif %}{% endblock %}
           {% block content %}
             {% block object-tools %}{% endblock %}
@@ -135,6 +134,25 @@
         {% block footer %}<div id="footer"></div>{% endblock %}
       </div>
     </div>
+    <div id="new-version-model-modal-container" class="hidden">
+      <div id="new-version-model-modal">
+        <div id="new-version-model-content">
+          <div id="new-version-name-container">
+            <h2>Enter Name of New Version:</h2>
+          </div>
+          <input type="text" id="text-input-major" placeholder="Major..." />
+          <input type="text" id="text-input-minor" placeholder="Minor..." />
+          <input type="text" id="text-input-patch" placeholder="Patch..." />
+          <div id="error-numeric-only" class="transparent">Error: Input Only Numeric Values (0-9)</div>
+          <div>
+            <button type="button" id="back-btn-new-model">Back</button>
+            <button type="button" id="confirm-btn-new-model">Confirm</button>
+            <button id="execute-btn" type="button">Execute Command</button>
+<pre id="training-res-output" class="transparent">Training ...</pre>
+          </div>
+        </div>
+      </div>
+    </div>
 </div>
 <!-- END Container -->
 
@@ -145,5 +163,159 @@
   <symbol viewBox="0 0 24 24" width="1rem" height="1rem" id="icon-sun"><path d="M0 0h24v24H0z" fill="currentColor"/><path d="M12 18a6 6 0 1 1 0-12 6 6 0 0 1 0 12zm0-2a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM11 1h2v3h-2V1zm0 19h2v3h-2v-3zM3.515 4.929l1.414-1.414L7.05 5.636 5.636 7.05 3.515 4.93zM16.95 18.364l1.414-1.414 2.121 2.121-1.414 1.414-2.121-2.121zm2.121-14.85l1.414 1.415-2.121 2.121-1.414-1.414 2.121-2.121zM5.636 16.95l1.414 1.414-2.121 2.121-1.414-1.414 2.121-2.121zM23 11v2h-3v-2h3zM4 11v2H1v-2h3z"/></symbol>
 </svg>
 <!-- END SVGs -->
+ <script>
+
+
+
+  // Frequently targeted elements accross functions
+      const majorInput = document.getElementById("text-input-major");
+      const minorInput = document.getElementById("text-input-minor");
+      const patchInput = document.getElementById("text-input-patch");
+
+
+// Add an event listener to train button
+document.getElementById("train-btn-new-model").addEventListener("click", function() {
+
+  const container = document.getElementById("new-version-model-modal-container");
+  console.log("clicked")
+  container.classList.remove("hidden");
+});
+
+
+// Event listener for Back button to hide the modal
+document.getElementById("back-btn-new-model").addEventListener("click", function() {
+  const container = document.getElementById("new-version-model-modal-container");
+  container.classList.add("hidden");
+});
+
+
+
+
+
+// Select the parent container
+  const dropdownContent = document.getElementById("dropdown-content");
+
+  // Add a single event listener to the parent
+  dropdownContent.addEventListener("click", (event) => {
+    // Check if the clicked element is a link
+    if (event.target.tagName === "A") {
+      console.log("Clicked an item");
+    }
+  });
+
+
+
+
+
+
+
+document.getElementById("execute-btn").addEventListener("click", function() {
+  const result = validate()
+  if (result.isValid) {
+    versionPost(result.inputs)
+    document.getElementById("training-res-output").classList.remove("transparent")
+    
+    /*setTimeout(() => {
+          if()  { // Result not yet arrived
+
+          }
+      }, 4000);*/
+  }
+});
+
+
+
+
+
+
+function validate(){
+
+      
+      // Select the error div
+      const errorDiv = document.getElementById("error-numeric-only");
+
+      // Validate inputs
+      const inputs = [majorInput, minorInput, patchInput];
+      let isValid = true;
+
+      inputs.forEach(input => {
+        if (!/^\d*$/.test(input.value)) {
+          input.value = ""; // Clear invalid input
+          isValid = false;
+        } else if (input.value == "") {
+          isValid = false;
+        }
+      });
+
+      // Show error message if invalid input found
+      if (!isValid) {
+        errorDiv.classList.remove("transparent");
+
+        // Hide the error message after 3 seconds
+        setTimeout(() => {
+          errorDiv.classList.add("transparent");
+        }, 3000);
+      }
+      return {isValid: isValid, inputs: inputs.map((input) => input.value)};
+}
+
+
+
+
+function versionPost(inputs){
+
+  fetch("/execute-command/", { // URL of the Django view
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"), // CSRF protection
+    },
+    body: JSON.stringify(inputs),
+  })
+    .then(response => response.json())
+    .then(data => {
+      const trainingResOutput = document.getElementById("training-res-output")
+      if (data.success) {
+        trainingResOutput.textContent = data.output;
+      } else {
+        trainingResOutput.textContent = `Error: ${data.error}`;
+      }
+
+        // Resets state of result prompts and input fields to "Neutral"
+        setTimeout(() => {
+          trainingResOutput.textContent = "Training ..."
+          trainingResOutput.classList.add("transparent");
+        }, 5000);
+
+
+        majorInput.value = ""
+        minorInput.value = ""
+        patchInput.value = ""
+
+    })
+    .catch(error => console.error("Error:", error));
+    
+}
+
+
+
+// Helper function to get the CSRF token from cookies
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+
+ </script>
 </body>
 </html>

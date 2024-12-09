@@ -829,6 +829,7 @@ a.deletelink:focus, a.deletelink:hover {
     display: flex;
     flex-direction: column;
     height: 100%;
+    border: 2px red solid;
 }
 
 #container > div {
@@ -1203,4 +1204,41 @@ a.deletelink:focus, a.deletelink:hover {
 .dropdown:hover .dropbtn {
   background-color: #0056b3;
   transform: translateY(-2px);
+}
+
+#new-version-model-modal-container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+#new-version-model-modal {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+#new-version-model-content{
+    border: rgb(255, 255, 255) 2px solid;
+    background: black;
+     z-index: 2;
+     padding: 0 20px 20px 20px;
+
+}
+
+#new-version-name-container {
+    background: blue;
+}
+
+.hidden  {
+    display: hidden;
+}
+
+.transparent {
+    color: transparent;
 }
