@@ -16,50 +16,61 @@
             <p>No matched job titles yet. Please submit your resume.</p>
         </div>
     </div>
-</div>
-<script>
-    function getCsrfToken() {
-        const csrfCookie = document.cookie.split("; ").find(row => row.startsWith("csrftoken="));
-        return csrfCookie ? csrfCookie.split("=")[1] : null;
-    }
-
-    document.getElementById("resumeForm").addEventListener("submit", async function (e) {
-        e.preventDefault();
-
-        const resumeStr = document.getElementById("resumeStr").value;
-        const csrfToken = getCsrfToken();
-
-        if (!resumeStr.trim()) {
-            alert("Please paste your resume.");
-            return;
+    <script>
+        function getCsrfToken() {
+            const csrfCookie = document.cookie.split("; ").find(row => row.startsWith("csrftoken="));
+            return csrfCookie ? csrfCookie.split("=")[1] : null;
         }
-
-        try {
-            const response = await fetch("{% url 'classify_resume' %}", {
-                method: "POST",
-                headers: {
-                    "X-CSRFToken": csrfToken,
-                    "Content-Type": "application/x-www-form-urlencoded"
-                },
-                body: new URLSearchParams({ resumeStr }),
-            });
-
-            if (!response.ok) {
-                throw new Error("Failed to fetch predictions.");
+    
+        document.getElementById("resumeForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+    
+            const resumeStr = document.getElementById("resumeStr").value;
+            const csrfToken = getCsrfToken();
+    
+            if (!resumeStr.trim()) {
+                alert("Please paste your resume.");
+                return;
             }
-
-            const data = await response.json();
-            const resultsList = document.getElementById("resultsList");
-
-            if (data.predictions && data.predictions.length > 0) {
-                resultsList.innerHTML = `<ul class="no-bullets">${data.predictions.map(prediction => `<li>${prediction}</li>`).join('')}</ul>`;
-            } else {
-                resultsList.innerHTML = `<p>No matched job titles found. Please try again.</p>`;
+    
+            try {
+                const response = await fetch("{% url 'classify_resume' %}", {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": csrfToken,
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    },
+                    body: new URLSearchParams({ resumeStr }),
+                });
+    
+                if (!response.ok) {
+                    throw new Error("Failed to fetch predictions.");
+                }
+    
+                const data = await response.json();
+                const resultsList = document.getElementById("resultsList");
+    
+                if (data.predictions && data.predictions.length > 0) {
+                    resultsList.innerHTML = `<ul class="no-bullets">
+                        ${data.predictions.map(prediction => {
+                            const [title, percentage] = prediction.split(':');
+                            const percentValue = parseFloat(percentage.trim().replace('%', ''));
+                            return `
+                                <li>
+                                    <div>${title}: ${percentage}</div>
+                                    <div class="progress-bar-container">
+                                        <div class="progress-bar" style="width: ${percentValue}%;"></div>
+                                    </div>
+                                </li>`;
+                        }).join('')}
+                    </ul>`;
+                } else {
+                    resultsList.innerHTML = `<p>No matched job titles found. Please try again.</p>`;
+                }
+            } catch (error) {
+                console.error(error);
+                document.getElementById("resultsList").innerHTML = `<p>Error fetching job titles. Please try again later.</p>`;
             }
-        } catch (error) {
-            console.error(error);
-            document.getElementById("resultsList").innerHTML = `<p>Error fetching job titles. Please try again later.</p>`;
-        }
-    });
-</script>
+        });
+    </script>    
 {% endblock %}
