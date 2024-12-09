@@ -14,9 +14,9 @@
         <h2 class="result-title">Matched Job Titles</h2>
         {% if predictions %}
     <div class="result-text">
-        <ul class="no-bullets">
+        <ul style="list-style-type: none; padding: 0; margin: 0;">
             {% for prediction in predictions %}
-                <li>{{ prediction }}</li>
+                <li style="margin-top: 7px;">{{ prediction }}</li>
             {% endfor %}
         </ul>
     </div>

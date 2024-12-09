@@ -116,10 +116,63 @@
                     <a href="#">Link 5</a>
                     <a href="#">Link 6</a>
                     <a href="#">Link 7</a>
+                  </div>
                 </div>
-                </div> 
+
+                <form id="uploadCsvForm" enctype="multipart/form-data" method="post">
+                  {% csrf_token %}
+                  <input type="file" name="csv_file" id="csvFileInput">
+                  <button type="submit">Upload CSV</button>
+                </form>
+                <div id="uploadCsvMessage"></div>
+                <script>
+                  document.getElementById("uploadCsvForm").addEventListener("submit", async function (e) {
+                  e.preventDefault();
+
+                  const formData = new FormData();
+                  const fileInput = document.getElementById("csvFileInput");
+
+                  if (fileInput.files.length === 0) {
+                      document.getElementById("uploadCsvMessage").innerText = "Please select a file to upload.";
+                      return;
+                  }
+
+                  formData.append("csv_file", fileInput.files[0]);
+
+                  //CSRF token
+                  function getCsrfToken() {
+                      const csrfCookie = document.cookie.split("; ").find(row => row.startsWith("csrftoken="));
+                      return csrfCookie ? csrfCookie.split("=")[1] : null;
+                  }
+
+                  const csrfToken = getCsrfToken();
+
+                  try {
+                      const response = await fetch("{% url 'upload_csv' %}", {
+                          method: "POST",
+                          headers: {
+                              "X-CSRFToken": csrfToken
+                          },
+                          body: formData,
+                      });
+
+                      if (!response.ok) {
+                          throw new Error("Network response was not ok");
+                      }
+
+                      const result = await response.json();
+                      const messageElement = document.getElementById("uploadCsvMessage");
+
+                      messageElement.innerText = result.message;
+                  } catch (error) {
+                      document.getElementById("uploadCsvMessage").innerText = "Error uploading the file.";
+                      console.error(error);
+                  }
+              });
+              </script>            
+
               </div>    
-              {% endif %}
+              {% endif %}                              
           </div>
           {% endblock %}
           {% block content_subtitle %}{% if subtitle %}<h2>{{ subtitle }}</h2>{% endif %}{% endblock %}
