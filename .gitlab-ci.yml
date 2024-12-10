@@ -1,0 +1,31 @@
+stages:
+  - build-and-test
+  - deploy
+
+variables:
+  DOCKER_IMAGE: "pipeline-testing"
+  DOCKER_HOST: "tcp://docker:2375"
+  DOCKER_TLS_CERTDIR: ""  # Disable TLS verification for `docker:dind`
+
+build-and-test:
+  stage: build-and-test
+  tags:
+    - docker-build  # Runner tag for the combined build-and-test stage
+  services:
+    - docker:dind  # Use Docker-in-Docker
+  script:
+    - docker info  # Verify Docker is running and accessible
+    - docker build -f Dockerfile.test -t $DOCKER_IMAGE .  # Build the Docker image
+    - docker run --rm $DOCKER_IMAGE  # Run the container to execute tests
+
+deploy:
+  stage: deploy
+  tags:
+    - docker  # Runner tag for the deploy stage
+  services:
+    - docker:dind  # Use Docker-in-Docker
+  script:
+    - echo "Deploy our application here"
+  only:
+    - master  # Deploy only on the master branch
+
