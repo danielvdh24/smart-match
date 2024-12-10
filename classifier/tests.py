@@ -9,13 +9,13 @@ class ResumeInputTests(TestCase):
         response = self.client.post(reverse('classify_resume'), {
             'resumeStr': "Experienced accountant skilled in money."
         })
+
         #check if the form submission is successful
         self.assertEqual(response.status_code, 200)
-        #decode the response content
-        content = response.content.decode()
-        #check to see if the output contains 5 job titles
-        job_titles = content.count("<li>")
-        self.assertEqual(job_titles, 5)
+
+        # Check if the response contains 5 predictions in the JSON response
+        predictions = response.json()['predictions']
+        self.assertEqual(len(predictions), 5)  # Check if the length of the predictions is 5
 
 class ResumeFormValidationTests(TestCase):
     def test_resume_field_is_required(self):
