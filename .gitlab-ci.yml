@@ -29,7 +29,7 @@ build-and-deploy:
     - docker-build
   script:
     #Authenticate to GKE
-    - echo $GCLOUD_SERVICE_KEY | base64 --decode > $CI_PROJECT_DIR/gcloud-key.json  # Decode the base64-encoded Google Cloud service account key
+    - echo $GCLOUD_SERVICE_KEY | base64 -d > $CI_PROJECT_DIR/gcloud-key.json  # Decode the base64-encoded Google Cloud service account key
     - gcloud auth activate-service-account --key-file $CI_PROJECT_DIR/gcloud-key.json  # Authenticate with Google Cloud
     - gcloud config set project $GOOGLE_PROJECT_ID
     - gcloud config set compute/region $GOOGLE_REGION
