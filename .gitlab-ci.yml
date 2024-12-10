@@ -5,7 +5,7 @@ stages:
 variables:
   DOCKER_IMAGE: "pipeline-testing"
   DOCKER_HOST: "tcp://docker:2375"
-  DOCKER_TLS_CERTDIR: ""  # Disable TLS verification for docker:dind
+  DOCKER_TLS_CERTDIR: ""  # Disable TLS verification for `docker:dind`
   GOOGLE_PROJECT_ID: "focused-sprite-443911-p2"
   GOOGLE_REGION: "europe-west4"
   GOOGLE_CLUSTER: "job-cluster"
@@ -25,23 +25,21 @@ build-and-test:
 
 build-and-deploy:
   stage: build-and-deploy
+  image: google/cloud-sdk:latest  # Use the Google Cloud SDK Docker image
   tags:
     - docker-build
   script:
-    # Install the gcloud CLI
-    - apt-get update && apt-get install -y curl apt-transport-https ca-certificates gnupg
-    - echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
-    - curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | tee /usr/share/keyrings/cloud.google.gpg
-    - apt-get update && apt-get install -y google-cloud-sdk
-    #Authenticate to GKE
+    # Authenticate to GKE
     - echo $GCLOUD_SERVICE_KEY | base64 -d > $CI_PROJECT_DIR/gcloud-key.json  # Decode the base64-encoded Google Cloud service account key
     - gcloud auth activate-service-account --key-file $CI_PROJECT_DIR/gcloud-key.json  # Authenticate with Google Cloud
     - gcloud config set project $GOOGLE_PROJECT_ID
     - gcloud config set compute/region $GOOGLE_REGION
     - gcloud container clusters get-credentials $GOOGLE_CLUSTER --region $GOOGLE_REGION
-    #Build the Latest image
-    - docker build -f Dockerfile.server -t $DEPLOYED_DOCKER_IMAGE:$DOCKER_TAG .
-    - docker push $DEPLOYED_DOCKER_IMAGE:$DOCKER_TAG
-    #Deploy on GKE cluster
+    
+    # Build the Latest image (production image)
+    - docker build -f Dockerfile.server . -t $DEPLOYED_DOCKER_IMAGE:$DOCKER_TAG  # Build the production image
+    - docker push $DEPLOYED_DOCKER_IMAGE:$DOCKER_TAG  # Push the image to GCR
+
+    # Deploy on GKE cluster
     - kubectl set image deployment/resumeapp resumeapp=$DEPLOYED_DOCKER_IMAGE:$DOCKER_TAG
     - kubectl rollout status deployment/resumeapp
