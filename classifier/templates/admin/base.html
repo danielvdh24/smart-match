@@ -35,7 +35,6 @@
     <div id="header">
         <div id="branding">
         {% block branding %}{% endblock %}
-        example 3
         </div>
         {% block usertools %}
         {% if has_permission %}
@@ -104,7 +103,7 @@
               {% block content_title %}{% if title %}<h1>{{ title }}</h1>{% endif %}{% endblock %}
               {% if title != "Logged out" %}
               <div id="modelchoices-div">
-                <button id="train-btn-new-model" type="button">Train</button>
+                <button id="train-new-model-btn" type="button">Train</button>
                 <button type="button">Evaluate</button>
                 <div class="dropdown">
                   <button class="dropbtn">--- Select Version ---</button>
@@ -172,7 +171,7 @@
               </script>            
 
               </div>    
-              {% endif %}                              
+              {% endif %}
           </div>
           {% endblock %}
           {% block content_subtitle %}{% if subtitle %}<h2>{{ subtitle }}</h2>{% endif %}{% endblock %}
@@ -193,14 +192,14 @@
           <div id="new-version-name-container">
             <h2>Enter Name of New Version:</h2>
           </div>
-          <input type="text" id="text-input-major" placeholder="Major..." />
-          <input type="text" id="text-input-minor" placeholder="Minor..." />
-          <input type="text" id="text-input-patch" placeholder="Patch..." />
-          <div id="error-numeric-only" class="transparent">Error: Input Only Numeric Values (0-9)</div>
+          <div> Latest trained model version: <span id="latest-trained-vers"></span></div>
+          <input type="text" id="text-input-major" placeholder="Major Num:" />
+          <input type="text" id="text-input-minor" placeholder="Minor Num:" />
+          <input type="text" id="text-input-patch" placeholder="Patch Num:" />
+          <div id="error-vers-input" class="transparent"></div>
           <div>
-            <button type="button" id="back-btn-new-model">Back</button>
-            <button type="button" id="confirm-btn-new-model">Confirm</button>
-            <button id="execute-btn" type="button">Execute Command</button>
+            <button type="button" id="cancel-new-model-btn">Back</button>
+            <button id="train-confirm-new-model-btn" type="button">Train</button>
 <pre id="training-res-output" class="transparent">Training ...</pre>
           </div>
         </div>
@@ -218,6 +217,10 @@
 <!-- END SVGs -->
  <script>
 
+  // global
+              let hasTrainRespone = false
+
+
 
 
   // Frequently targeted elements accross functions
@@ -225,31 +228,63 @@
       const minorInput = document.getElementById("text-input-minor");
       const patchInput = document.getElementById("text-input-patch");
 
+      const latestTrainedVers = document.getElementById("latest-trained-vers")
 
-// Add an event listener to train button
-document.getElementById("train-btn-new-model").addEventListener("click", function() {
+      const trainConfirmBtn = document.getElementById("train-confirm-new-model-btn")
 
-  const container = document.getElementById("new-version-model-modal-container");
+      const backTrainBtn = document.getElementById("cancel-new-model-btn")
+
+      const errorDiv = document.getElementById("error-vers-input");
+
+            const trainingResOutput = document.getElementById("training-res-output")
+
+
+
+
+document.getElementById("train-new-model-btn").addEventListener("click", function() {
+
+  const modal = document.getElementById("new-version-model-modal-container");
   console.log("clicked")
-  container.classList.remove("hidden");
+  modal.classList.remove("hidden");
+
+  fetch("/fetch-latest-model/", { // URL of the Django view
+  method: "GET",
+  headers: {
+    "Content-Type": "application/json",
+    "X-CSRFToken": getCookie("csrftoken"), // CSRF protection
+  }
+}).then(response => response.json())
+  .then(data => {
+      hasTrainRespone = true
+      if (data.success) {
+        latestTrainedVers.textContent = data.output;
+      } else {
+        latestTrainedVers.textContent = `Error: ${data.error}`;
+      }
+    })
+    .catch(error => console.error("Error:", error));
+
+
+
 });
 
 
 // Event listener for Back button to hide the modal
-document.getElementById("back-btn-new-model").addEventListener("click", function() {
-  const container = document.getElementById("new-version-model-modal-container");
-  container.classList.add("hidden");
+document.getElementById("cancel-new-model-btn").addEventListener("click", function() {
+  const modal = document.getElementById("new-version-model-modal-container");
+  modal.classList.add("hidden");
+
+
+  // Preemptivly perform the work of set timeout prompts for delayed or incoming prompts on async timer (for visual effect improvement)
+  trainingResOutput.classList.add("transparent");
+  errorDiv.classList.add("transparent");
 });
 
 
 
 
 
-// Select the parent container
-  const dropdownContent = document.getElementById("dropdown-content");
-
-  // Add a single event listener to the parent
-  dropdownContent.addEventListener("click", (event) => {
+document.getElementById("dropdown-content").addEventListener("click", (event) => {
     // Check if the clicked element is a link
     if (event.target.tagName === "A") {
       console.log("Clicked an item");
@@ -262,17 +297,31 @@ document.getElementById("back-btn-new-model").addEventListener("click", function
 
 
 
-document.getElementById("execute-btn").addEventListener("click", function() {
+trainConfirmBtn.addEventListener("click", function() {
   const result = validate()
   if (result.isValid) {
+    
+    console.log("i was clicked")
+    
+    this.classList.add("hidden");
+    backTrainBtn.classList.add("hidden")
+
+
     versionPost(result.inputs)
     document.getElementById("training-res-output").classList.remove("transparent")
     
-    /*setTimeout(() => {
-          if()  { // Result not yet arrived
-
+    setTimeout(() => {
+          if(!hasTrainRespone)  { // Result not yet arrived
+trainingResOutput.textContent = "Soon Done ..."
           }
-      }, 4000);*/
+      }, 13000);
+
+
+          setTimeout(() => {
+          if(!hasTrainRespone)  { // Result not yet arrived
+trainingResOutput.textContent = "Finalizing ..."
+          }
+      }, 20000);
   }
 });
 
@@ -283,41 +332,84 @@ document.getElementById("execute-btn").addEventListener("click", function() {
 
 function validate(){
 
-      
-      // Select the error div
-      const errorDiv = document.getElementById("error-numeric-only");
-
       // Validate inputs
       const inputs = [majorInput, minorInput, patchInput];
-      let isValid = true;
-
+      let isCorrectInputDataType = true;
+      let isCorrectVersionIncrement = true;
       inputs.forEach(input => {
-        if (!/^\d*$/.test(input.value)) {
-          input.value = ""; // Clear invalid input
-          isValid = false;
-        } else if (input.value == "") {
-          isValid = false;
+        if (!/^\d*$/.test(input.value) || input.value == "") {
+          isCorrectInputDataType = false;
+          return; // Stop further iteration if invalid input is found
         }
+
+        // else append
       });
 
-      // Show error message if invalid input found
-      if (!isValid) {
-        errorDiv.classList.remove("transparent");
 
+      if (isCorrectInputDataType) {
+
+
+
+        const latestTrainedVersString = document.getElementById("latest-trained-vers").textContent
+
+        if (latestTrainedVersString)  {
+
+        console.log(latestTrainedVersString)
+        
+        const versionMatch = latestTrainedVersString.match(/\d+\.\d+\.\d+/);
+
+        const versionParts = versionMatch[0].split('.')
+        
+                  console.log("hih")
+
+
+        const versionAsInt = parseInt(versionParts.join(''), 10);
+
+
+        console.log(versionAsInt)
+                console.log(inputs.join(''))
+
+
+
+
+        
+
+        if(parseInt(inputs.join('')) <= versionAsInt) {
+          isCorrectVersionIncrement =  false
+        }
+
+        } else {
+          isCorrectVersionIncrement =  false
+
+        }
+
+      }
+
+      // Show error message if invalid input found
+      if (!isCorrectInputDataType || !isCorrectVersionIncrement) {
+        console.log(isCorrectInputDataType)
+        console.log(isCorrectVersionIncrement)
+        errorDiv.classList.remove("transparent");
+        errorDiv.textContent =  (!isCorrectInputDataType) ? "Error: Input Only Numeric Values (0-9)" : "Error: Version has to increment"
         // Hide the error message after 3 seconds
         setTimeout(() => {
           errorDiv.classList.add("transparent");
         }, 3000);
-      }
-      return {isValid: isValid, inputs: inputs.map((input) => input.value)};
-}
 
+        inputs.forEach(input => {
+          input.value = ""
+        })
+
+      }
+
+      return {isValid: isCorrectInputDataType & isCorrectVersionIncrement, inputs: inputs.map((input) => input.value)};
+}
 
 
 
 function versionPost(inputs){
 
-  fetch("/execute-command/", { // URL of the Django view
+  fetch("/train-command/", { // URL of the Django view
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -327,16 +419,19 @@ function versionPost(inputs){
   })
     .then(response => response.json())
     .then(data => {
-      const trainingResOutput = document.getElementById("training-res-output")
+      hasTrainRespone = true
       if (data.success) {
         trainingResOutput.textContent = data.output;
       } else {
         trainingResOutput.textContent = `Error: ${data.error}`;
       }
 
+
+
         // Resets state of result prompts and input fields to "Neutral"
         setTimeout(() => {
-          trainingResOutput.textContent = "Training ..."
+                trainingResOutput.textContent = "Training..."
+
           trainingResOutput.classList.add("transparent");
         }, 5000);
 
@@ -344,6 +439,12 @@ function versionPost(inputs){
         majorInput.value = ""
         minorInput.value = ""
         patchInput.value = ""
+
+
+              hasTrainRespone = false
+
+              trainConfirmBtn.classList.remove("hidden");
+              backTrainBtn.classList.remove("hidden")
 
     })
     .catch(error => console.error("Error:", error));

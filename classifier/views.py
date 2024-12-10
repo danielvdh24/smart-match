@@ -27,7 +27,25 @@ def classify_resume(request):
             predictions = predict_top_5_resume(resume_text, version)
     return render(request, 'home.html', {'predictions': predictions})
 
-def execute_command(request):
+
+from django.shortcuts import render
+import subprocess
+
+def fetch_latest_model(request):
+    if request.method == "GET":
+        try:
+            # Execute the script to find the highest version
+            result = subprocess.check_output(["./find_highest_version.sh"], text=True).strip()
+
+            return JsonResponse({"success": True, "output": result})
+        except subprocess.CalledProcessError as e:
+            return JsonResponse({"success": False, "error": str(e)})
+    return JsonResponse({"success": False, "error": "Invalid request"})
+          
+
+    
+
+def train_command(request):
     if request.method == "POST":
         try:
             body_unicode = request.body.decode('utf-8')  # Decode byte stream
