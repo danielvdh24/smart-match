@@ -29,17 +29,17 @@ build-and-deploy:
   tags:
     - docker-build
   script:
-    # Authenticate to GKE
-    - echo $GCLOUD_SERVICE_KEY | base64 -d > $CI_PROJECT_DIR/gcloud-key.json  # Decode the base64-encoded Google Cloud service account key
-    - gcloud auth activate-service-account --key-file $CI_PROJECT_DIR/gcloud-key.json  # Authenticate with Google Cloud
+    # Authenticate to GKE using the decoded service account key
+    - echo $GCLOUD_SERVICE_KEY | base64 -d > $CI_PROJECT_DIR/gcloud-key.json
+    - gcloud auth activate-service-account --key-file $CI_PROJECT_DIR/gcloud-key.json
     - gcloud config set project $GOOGLE_PROJECT_ID
     - gcloud config set compute/region $GOOGLE_REGION
     - gcloud container clusters get-credentials $GOOGLE_CLUSTER --region $GOOGLE_REGION
-    
-    # Build the Latest image (production image)
+
+    # Build the production image
     - docker build -f Dockerfile.server . -t $DEPLOYED_DOCKER_IMAGE:$DOCKER_TAG  # Build the production image
     - docker push $DEPLOYED_DOCKER_IMAGE:$DOCKER_TAG  # Push the image to GCR
 
-    # Deploy on GKE cluster
+    # Deploy the application to GKE
     - kubectl set image deployment/resumeapp resumeapp=$DEPLOYED_DOCKER_IMAGE:$DOCKER_TAG
     - kubectl rollout status deployment/resumeapp
