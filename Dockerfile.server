@@ -22,8 +22,5 @@ EXPOSE 8000
 # Set the environment variable for Django to use the correct Python environment
 ENV PATH /opt/conda/envs/resume_env/bin:$PATH
 
-# Collect static files
-RUN python manage.py collectstatic --noinput
-
 # Run the Django development server
 CMD ["conda", "run", "-n", "resume_env", "python", "manage.py", "runserver", "0.0.0.0:8000"]
