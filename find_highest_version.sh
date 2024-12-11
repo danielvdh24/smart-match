@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Directory containing the model files
-directory="/home/kai/code/work/dit826/repo/group8/classifier/model"
+directory="$(pwd)/classifier/model"
 
 # Initialize the highest version and filename variables
 highest_version=""
