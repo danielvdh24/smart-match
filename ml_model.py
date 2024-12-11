@@ -15,6 +15,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import classification_report
+from sklearn.metrics import accuracy_score
 from classifier.models import Resume
 import pickle
 
@@ -95,6 +96,8 @@ def evaluate_model(version="1.0.0"):
     print(classification_report(y_test, y_pred, zero_division=0))
 
 
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f"Accuracy: {accuracy:.2f}")
 
 
 

@@ -105,9 +105,9 @@
               <div id="modelchoices-div">
                 <button id="train-new-model-btn" type="button">Train</button>
                 <button id="evaluate-model-btn" type="button">Evaluate</button>
-                <div class="dropdown">
-                  <button class="dropbtn">--- Select Version ---</button>
-                  <div class="dropdown-content" id="dropdown-content"></div>
+                <div id="dropdown-select-system-vers" class="dropdown">
+                  <button id="dropdown-content-select-system-vers-btn" class="dropbtn">--- Select Version ---</button>
+                  <div class="dropdown-content" id="dropdown-content-select-system-vers"></div>
                 </div>
 
                 <form id="uploadCsvForm" enctype="multipart/form-data" method="post">
@@ -197,6 +197,32 @@
         </div>
       </div>
     </div>
+  
+
+    <div id="evaluation-modal-container" class="hidden">
+      <div id="evaluation-modal">
+        <div id="evaluation-content">
+          <div id="new-version-name-container">
+            <h2>Select model version to evaluate:</h2>
+          </div>
+
+          <div id="dropdown-select-eval-vers" class="dropdown">
+          <button id="dropdown-content-select-eval-vers-btn" class="dropbtn">--- Select Version ---</button>
+          <div class="dropdown-content" id="dropdown-content-select-eval-vers"></div>
+          </div>
+
+          
+          <div id="error-vers-prompt" class="hidden">"Error: Fill Each Input With Numbers Only"</div>
+          <div>
+            <button type="button" id="cancel-evaluation-btn">Back</button>
+            <button id="train-confirm-new-model-btn" type="button">Evaluate</button>
+<pre id="training-res-output" class="hidden">Training ...</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
 </div>
 <!-- END Container -->
 
@@ -226,11 +252,9 @@
 
   const backTrainBtn = document.getElementById("cancel-new-model-btn")
 
-  const errorDiv = document.getElementById("error-vers-prompt");
+  const trainingErrorDiv = document.getElementById("error-vers-prompt");
 
   const trainingResOutput = document.getElementById("training-res-output")
-
-  const dropdownContent = document.getElementById('dropdown-content');
 
 
 
@@ -248,22 +272,63 @@
         dataOutputObj = data.output
         console.log(dataOutputObj)
         
-        const li = document.createElement('li');
-        li.textContent = `(Newest) ${dataOutputObj.highest_version_file}`;
-        li.id = "dropdown-latest-model"
-        dropdownContent.appendChild(li);
+
 
         
-        
+
+        const dropdownContents = document.querySelectorAll('.dropdown-content');
+
+        dropdownContents.forEach((dropdownContent) => {
+
+        const li = document.createElement('li');
+        li.textContent = `(Newest) ${dataOutputObj.highest_version_file}`;
+        li.id = `${dropdownContent.id}-${dataOutputObj.highest_version_file}`
+        li.classList.add(`${dataOutputObj.highest_version_file}`, "highest-version-file"); 
+
+        dropdownContent.appendChild(li);
+
         dataOutputObj.model_files_restof.forEach(item =>  {
           const li = document.createElement('li');
           li.textContent = item
+          
+        li.id = `${dropdownContent.id}-${item}`
+        li.classList.add(item); // Add 
+
           dropdownContent.appendChild(li);
         });
 
+        })
+        
+
+
+
+        dropdownContents.forEach((dropdownContent) => {
+  // Loop through each child of the dropdownContent
+  dropdownContent.querySelectorAll('li').forEach((item) => {
+
+    // Add an event listener to log the id when clicked
+    item.addEventListener('click', () => {
+
+      parent = item.parentElement
+
+      if (parent.id == "dropdown-content-select-system-vers") {
+        console.log("amazing")
+        console.log(item)
+        
+        document.getElementById("dropdown-content-select-system-vers-btn").textContent = item.className.split(' ')[0]
+
+      } else {
+        document.getElementById("dropdown-content-select-eval-vers-btn").textContent = item.className.split(' ')[0]
+      }
+
+
+    });
+  });
+});
+
+
       } else {
         dropdownContent.textContent = `Error: ${data.error}`;
-        console.log("ijk")
       }
     })
   .catch(error => console.error("Error:", error));
@@ -295,11 +360,6 @@ document.getElementById("train-new-model-btn").addEventListener("click", functio
 });
 
 
-document.getElementById("train-new-model-btn").addEventListener("click", function() {
-
-})
-
-
 // Event listener for Back button to hide the modal
 document.getElementById("cancel-new-model-btn").addEventListener("click", function() {
   const modal = document.getElementById("new-version-model-modal-container");
@@ -308,20 +368,8 @@ document.getElementById("cancel-new-model-btn").addEventListener("click", functi
 
   // Reset certain states for a default-view look upon potential user re-entry to the train-model view again. 
   trainingResOutput.classList.add("hidden");
-  errorDiv.classList.add("hidden");
+  trainingErrorDiv.classList.add("hidden");
 });
-
-
-
-
-document.getElementById("dropdown-content").addEventListener("click", (event) => {
-    // Check if the clicked element is a link
-    if (event.target.tagName === "A") {
-      console.log("Clicked an item");
-    }
-  });
-
-
 
 
 trainConfirmBtn.addEventListener("click", function() {
@@ -334,7 +382,7 @@ trainConfirmBtn.addEventListener("click", function() {
     this.classList.add("hidden");
     backTrainBtn.classList.add("hidden")
     clearTimeout(timeoutInputError)
-    errorDiv.classList.add("hidden")
+    trainingErrorDiv.classList.add("hidden")
     
     versionPost(result.inputs)
 
@@ -351,6 +399,29 @@ trainConfirmBtn.addEventListener("click", function() {
 
   }
 });
+
+
+document.getElementById("evaluate-model-btn").addEventListener("click", function() {
+
+  const modal = document.getElementById("evaluation-modal-container");
+  modal.classList.remove("hidden");
+  
+})
+
+
+
+document.getElementById("cancel-evaluation-btn").addEventListener("click", function() {
+  const modal = document.getElementById("evaluation-modal-container");
+  modal.classList.add("hidden");
+
+
+  // Reset certain states for a default-view look upon potential user re-entry to the train-model view again. 
+  trainingResOutput.classList.add("hidden");
+  trainingErrorDiv.classList.add("hidden");
+});
+
+
+
 
 
 
@@ -415,12 +486,12 @@ function validate(){
       // Show error message if invalid input found
       if (!isCorrectInputDataType || !isCorrectVersionIncrement) {
 
-        errorDiv.classList.remove("hidden");
-        errorDiv.textContent =  (!isCorrectInputDataType) ? "Error: Fill Each Input With Numbers Only" : "Error: Version Has To Increment"
+        trainingErrorDiv.classList.remove("hidden");
+        trainingErrorDiv.textContent =  (!isCorrectInputDataType) ? "Error: Fill Each Input With Numbers Only" : "Error: Version Has To Increment"
         
         clearTimeout(timeoutInputError)
         timeoutInputError = setTimeout(() => {
-          errorDiv.classList.add("hidden");
+          trainingErrorDiv.classList.add("hidden");
         }, 5000);
 
         inputs.forEach(input => {
