@@ -1,7 +1,6 @@
 import os
 import sys
 import pickle
-from django.shortcuts import render
 import subprocess
 from django.http import JsonResponse
 import json
@@ -28,8 +27,32 @@ def classify_resume(request):
     return JsonResponse({'predictions': []})
 
 
-from django.shortcuts import render
-import subprocess
+
+
+def fetch_all_models(request):
+    try:
+        # Get the current working directory using pwd, then append 'classifier/models'
+        current_directory = os.getcwd()  # Get current working directory (pwd)
+        models_directory = os.path.join(current_directory, 'classifier', 'model')  # Path to the models folder
+        # List all files in the directory
+
+
+        highest_version_file = subprocess.check_output(["./find_highest_version.sh"], text=True).strip()
+        model_files_restof = []
+  
+        
+        for filename in os.listdir(models_directory):
+            file_path = os.path.join(models_directory, filename)
+            if os.path.isfile(file_path):  # Only add files, not subdirectories
+                model_files_restof.append(filename[:-4])# Append file name to list
+        print(model_files_restof)
+        return JsonResponse({"success": True, 'output': {"highest_version_file": highest_version_file, "model_files_restof": sorted(model_files_restof)}})
+
+    except Exception as e:
+        return JsonResponse({"success": False, 'error': str(e)})
+
+
+
 
 def fetch_latest_model(request):
     if request.method == "GET":
@@ -63,6 +86,8 @@ def train_command(request):
         except subprocess.CalledProcessError as e:
             return JsonResponse({"success": False, "error": str(e)})
     return JsonResponse({"success": False, "error": "Invalid request"})
+
+
 
 def upload_csv(request):
     if request.method == 'POST':

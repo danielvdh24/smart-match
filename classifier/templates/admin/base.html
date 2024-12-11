@@ -104,18 +104,10 @@
               {% if title != "Logged out" %}
               <div id="modelchoices-div">
                 <button id="train-new-model-btn" type="button">Train</button>
-                <button type="button">Evaluate</button>
+                <button id="evaluate-model-btn" type="button">Evaluate</button>
                 <div class="dropdown">
                   <button class="dropbtn">--- Select Version ---</button>
-                  <div class="dropdown-content" id="dropdown-content">
-                    <a href="#">Link 1</a>
-                    <a href="#">Link 2</a>
-                    <a href="#">Link 3</a>
-                    <a href="#">Link 4</a>
-                    <a href="#">Link 5</a>
-                    <a href="#">Link 6</a>
-                    <a href="#">Link 7</a>
-                  </div>
+                  <div class="dropdown-content" id="dropdown-content"></div>
                 </div>
 
                 <form id="uploadCsvForm" enctype="multipart/form-data" method="post">
@@ -193,9 +185,9 @@
             <h2>Enter Name of New Version:</h2>
           </div>
           <div> Latest trained model version: <span id="latest-trained-vers"></span></div>
-          <input type="text" id="text-input-major" placeholder="(Major (0)):" />
-          <input type="text" id="text-input-minor" placeholder="(Minor (0)):" />
-          <input type="text" id="text-input-patch" placeholder="(Patch (0)):" />
+          <input type="text" id="text-input-major" placeholder="Major (0) :" />
+          <input type="text" id="text-input-minor" placeholder="Minor (0) :" />
+          <input type="text" id="text-input-patch" placeholder="Patch (0) :" />
           <div id="error-vers-prompt" class="hidden">"Error: Fill Each Input With Numbers Only"</div>
           <div>
             <button type="button" id="cancel-new-model-btn">Back</button>
@@ -238,6 +230,44 @@
 
   const trainingResOutput = document.getElementById("training-res-output")
 
+  const dropdownContent = document.getElementById('dropdown-content');
+
+
+
+    // Get names of all model versions 
+    fetch("/fetch-all-models/", { // URL of the Django view
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"), // CSRF protection
+    }
+  }).then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        
+        dataOutputObj = data.output
+        console.log(dataOutputObj)
+        
+        const li = document.createElement('li');
+        li.textContent = `(Newest) ${dataOutputObj.highest_version_file}`;
+        li.id = "dropdown-latest-model"
+        dropdownContent.appendChild(li);
+
+        
+        
+        dataOutputObj.model_files_restof.forEach(item =>  {
+          const li = document.createElement('li');
+          li.textContent = item
+          dropdownContent.appendChild(li);
+        });
+
+      } else {
+        dropdownContent.textContent = `Error: ${data.error}`;
+        console.log("ijk")
+      }
+    })
+  .catch(error => console.error("Error:", error));
+
 
   //Get info about latest model from server. Server vs client side job for this could be argued in this case server side job for this is chosen due to convenience and potential user side benefits (in terms of performance)
   fetch("/fetch-latest-model/", { // URL of the Django view
@@ -256,8 +286,6 @@
     })
   .catch(error => console.error("Error:", error));
 
-  //Get all models, 
-
 
 document.getElementById("train-new-model-btn").addEventListener("click", function() {
 
@@ -265,6 +293,11 @@ document.getElementById("train-new-model-btn").addEventListener("click", functio
   modal.classList.remove("hidden");
 
 });
+
+
+document.getElementById("train-new-model-btn").addEventListener("click", function() {
+
+})
 
 
 // Event listener for Back button to hide the modal
@@ -300,6 +333,8 @@ trainConfirmBtn.addEventListener("click", function() {
 
     this.classList.add("hidden");
     backTrainBtn.classList.add("hidden")
+    clearTimeout(timeoutInputError)
+    errorDiv.classList.add("hidden")
     
     versionPost(result.inputs)
 
@@ -379,7 +414,6 @@ function validate(){
 
       // Show error message if invalid input found
       if (!isCorrectInputDataType || !isCorrectVersionIncrement) {
-        console.log("hit")
 
         errorDiv.classList.remove("hidden");
         errorDiv.textContent =  (!isCorrectInputDataType) ? "Error: Fill Each Input With Numbers Only" : "Error: Version Has To Increment"
@@ -387,7 +421,7 @@ function validate(){
         clearTimeout(timeoutInputError)
         timeoutInputError = setTimeout(() => {
           errorDiv.classList.add("hidden");
-        }, 4000);
+        }, 5000);
 
         inputs.forEach(input => {
           input.value = ""
@@ -419,7 +453,14 @@ function versionPost(inputs){
 
         const versionString = versionMatch[0]
 
-        latestTrainedVers.textContent = `model_v${versionString}`
+        // Update the latest trained model hint
+        latestTrainedVers.textContent = `model_v${versionString} -- latest --`
+
+        // Add newly trained model to list of available models
+        const li = document.createElement('li');
+        li.textContent = `model_v${versionString}`;
+        dropdownContent.appendChild(li);
+
 
       } else {
         trainingResOutput.textContent = `Error: ${data.error}`;
