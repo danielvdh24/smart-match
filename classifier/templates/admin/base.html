@@ -193,14 +193,14 @@
             <h2>Enter Name of New Version:</h2>
           </div>
           <div> Latest trained model version: <span id="latest-trained-vers"></span></div>
-          <input type="text" id="text-input-major" placeholder="Major Num:" />
-          <input type="text" id="text-input-minor" placeholder="Minor Num:" />
-          <input type="text" id="text-input-patch" placeholder="Patch Num:" />
-          <div id="error-vers-input" class="transparent"></div>
+          <input type="text" id="text-input-major" placeholder="(Major (0)):" />
+          <input type="text" id="text-input-minor" placeholder="(Minor (0)):" />
+          <input type="text" id="text-input-patch" placeholder="(Patch (0)):" />
+          <div id="error-vers-prompt" class="hidden">"Error: Fill Each Input With Numbers Only"</div>
           <div>
             <button type="button" id="cancel-new-model-btn">Back</button>
             <button id="train-confirm-new-model-btn" type="button">Train</button>
-<pre id="training-res-output" class="transparent">Training ...</pre>
+<pre id="training-res-output" class="hidden">Training ...</pre>
           </div>
         </div>
       </div>
@@ -217,54 +217,52 @@
 <!-- END SVGs -->
  <script>
 
-  // global
-              let hasTrainRespone = false
+  // global state / event / transition variables
+  let timeoutInputError = 0
+  let timeoutSoonDone = 0
+  let timeoutFinalizing = 0
 
 
+    // Frequently targeted elements accross functions
+  const majorInput = document.getElementById("text-input-major");
+  const minorInput = document.getElementById("text-input-minor");
+  const patchInput = document.getElementById("text-input-patch");
+
+  const latestTrainedVers = document.getElementById("latest-trained-vers")
+
+  const trainConfirmBtn = document.getElementById("train-confirm-new-model-btn")
+
+  const backTrainBtn = document.getElementById("cancel-new-model-btn")
+
+  const errorDiv = document.getElementById("error-vers-prompt");
+
+  const trainingResOutput = document.getElementById("training-res-output")
 
 
-  // Frequently targeted elements accross functions
-      const majorInput = document.getElementById("text-input-major");
-      const minorInput = document.getElementById("text-input-minor");
-      const patchInput = document.getElementById("text-input-patch");
-
-      const latestTrainedVers = document.getElementById("latest-trained-vers")
-
-      const trainConfirmBtn = document.getElementById("train-confirm-new-model-btn")
-
-      const backTrainBtn = document.getElementById("cancel-new-model-btn")
-
-      const errorDiv = document.getElementById("error-vers-input");
-
-            const trainingResOutput = document.getElementById("training-res-output")
-
-
-
-
-document.getElementById("train-new-model-btn").addEventListener("click", function() {
-
-  const modal = document.getElementById("new-version-model-modal-container");
-  console.log("clicked")
-  modal.classList.remove("hidden");
-
+  //Get info about latest model from server. Server vs client side job for this could be argued in this case server side job for this is chosen due to convenience and potential user side benefits (in terms of performance)
   fetch("/fetch-latest-model/", { // URL of the Django view
-  method: "GET",
-  headers: {
-    "Content-Type": "application/json",
-    "X-CSRFToken": getCookie("csrftoken"), // CSRF protection
-  }
-}).then(response => response.json())
-  .then(data => {
-      hasTrainRespone = true
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"), // CSRF protection
+    }
+  }).then(response => response.json())
+    .then(data => {
       if (data.success) {
         latestTrainedVers.textContent = data.output;
       } else {
         latestTrainedVers.textContent = `Error: ${data.error}`;
       }
     })
-    .catch(error => console.error("Error:", error));
+  .catch(error => console.error("Error:", error));
+
+  //Get all models, 
 
 
+document.getElementById("train-new-model-btn").addEventListener("click", function() {
+
+  const modal = document.getElementById("new-version-model-modal-container");
+  modal.classList.remove("hidden");
 
 });
 
@@ -275,11 +273,10 @@ document.getElementById("cancel-new-model-btn").addEventListener("click", functi
   modal.classList.add("hidden");
 
 
-  // Preemptivly perform the work of set timeout prompts for delayed or incoming prompts on async timer (for visual effect improvement)
-  trainingResOutput.classList.add("transparent");
-  errorDiv.classList.add("transparent");
+  // Reset certain states for a default-view look upon potential user re-entry to the train-model view again. 
+  trainingResOutput.classList.add("hidden");
+  errorDiv.classList.add("hidden");
 });
-
 
 
 
@@ -294,34 +291,29 @@ document.getElementById("dropdown-content").addEventListener("click", (event) =>
 
 
 
-
-
-
 trainConfirmBtn.addEventListener("click", function() {
+
   const result = validate()
+
   if (result.isValid) {
     
-    console.log("i was clicked")
-    
+
     this.classList.add("hidden");
     backTrainBtn.classList.add("hidden")
-
-
-    versionPost(result.inputs)
-    document.getElementById("training-res-output").classList.remove("transparent")
     
-    setTimeout(() => {
-          if(!hasTrainRespone)  { // Result not yet arrived
-trainingResOutput.textContent = "Soon Done ..."
-          }
-      }, 13000);
+    versionPost(result.inputs)
 
+    trainingResOutput.textContent = "Training ..."
+    trainingResOutput.classList.remove("hidden")
+    
+    timeoutSoonDone = setTimeout(() => {
+        trainingResOutput.textContent = "Soon Done ...";
+    }, 11000);
 
-          setTimeout(() => {
-          if(!hasTrainRespone)  { // Result not yet arrived
-trainingResOutput.textContent = "Finalizing ..."
-          }
-      }, 20000);
+    timeoutFinalizing = setTimeout(() => {
+        trainingResOutput.textContent = "Finalizing ...";
+    }, 19000);
+
   }
 });
 
@@ -336,65 +328,66 @@ function validate(){
       const inputs = [majorInput, minorInput, patchInput];
       let isCorrectInputDataType = true;
       let isCorrectVersionIncrement = true;
+      let inputtedVersionsParts = []
       inputs.forEach(input => {
-        if (!/^\d*$/.test(input.value) || input.value == "") {
+        const val = input.value
+        if (!/^\d*$/.test(val) || val == "") {
           isCorrectInputDataType = false;
           return; // Stop further iteration if invalid input is found
         }
 
-        // else append
+        inputtedVersionsParts.push(val)
       });
 
 
       if (isCorrectInputDataType) {
 
+        const latestVersString = latestTrainedVers.textContent
+
+        const versionMatch = latestVersString.match(/\d+\.\d+\.\d+/);
+
+        const latestVersionsParts = versionMatch[0].split('.')
 
 
-        const latestTrainedVersString = document.getElementById("latest-trained-vers").textContent
-
-        if (latestTrainedVersString)  {
-
-        console.log(latestTrainedVersString)
-        
-        const versionMatch = latestTrainedVersString.match(/\d+\.\d+\.\d+/);
-
-        const versionParts = versionMatch[0].split('.')
-        
-                  console.log("hih")
-
-
-        const versionAsInt = parseInt(versionParts.join(''), 10);
-
-
-        console.log(versionAsInt)
-                console.log(inputs.join(''))
-
-
-
-
-        
-
-        if(parseInt(inputs.join('')) <= versionAsInt) {
-          isCorrectVersionIncrement =  false
+        // Convert elements to integers to AVOID lexicographic comparison (e.g., '10000000' < '9' == true for strings)
+        for (let i = 0; i < inputtedVersionsParts.length; i++) {
+          inputtedVersionsParts[i] = parseInt(inputtedVersionsParts[i], 10);
+          latestVersionsParts[i] = parseInt(latestVersionsParts[i], 10);
         }
 
-        } else {
-          isCorrectVersionIncrement =  false
 
+        // Check each :nth place in semvar version input to ensure correct planned version increment
+        if ((inputtedVersionsParts[0] < latestVersionsParts[0])){
+
+          isCorrectVersionIncrement = false
+          
+        } else if (inputtedVersionsParts[0] == latestVersionsParts[0]){
+        
+          if (inputtedVersionsParts[1] <  latestVersionsParts[1]) {
+
+            isCorrectVersionIncrement = false
+
+          } else if (inputtedVersionsParts[1] == latestVersionsParts[1]){
+
+            if (inputtedVersionsParts[2] <= latestVersionsParts[2]){
+                            
+              isCorrectVersionIncrement = false
+            }
+          }
         }
-
       }
 
       // Show error message if invalid input found
       if (!isCorrectInputDataType || !isCorrectVersionIncrement) {
-        console.log(isCorrectInputDataType)
-        console.log(isCorrectVersionIncrement)
-        errorDiv.classList.remove("transparent");
-        errorDiv.textContent =  (!isCorrectInputDataType) ? "Error: Input Only Numeric Values (0-9)" : "Error: Version has to increment"
-        // Hide the error message after 3 seconds
-        setTimeout(() => {
-          errorDiv.classList.add("transparent");
-        }, 3000);
+        console.log("hit")
+
+        errorDiv.classList.remove("hidden");
+        errorDiv.textContent =  (!isCorrectInputDataType) ? "Error: Fill Each Input With Numbers Only" : "Error: Version Has To Increment"
+        
+        clearTimeout(timeoutInputError)
+        timeoutInputError = setTimeout(() => {
+          errorDiv.classList.add("hidden");
+        }, 4000);
 
         inputs.forEach(input => {
           input.value = ""
@@ -419,32 +412,32 @@ function versionPost(inputs){
   })
     .then(response => response.json())
     .then(data => {
-      hasTrainRespone = true
       if (data.success) {
         trainingResOutput.textContent = data.output;
+
+        const versionMatch = data.output.match(/\d+\.\d+\.\d+/);
+
+        const versionString = versionMatch[0]
+
+        latestTrainedVers.textContent = `model_v${versionString}`
+
       } else {
         trainingResOutput.textContent = `Error: ${data.error}`;
       }
 
 
-
-        // Resets state of result prompts and input fields to "Neutral"
-        setTimeout(() => {
-                trainingResOutput.textContent = "Training..."
-
-          trainingResOutput.classList.add("transparent");
-        }, 5000);
+      // Resets certain states for some prompts to "neutral"
+      majorInput.value = ""
+      minorInput.value = ""
+      patchInput.value = ""
 
 
-        majorInput.value = ""
-        minorInput.value = ""
-        patchInput.value = ""
+      clearTimeout(timeoutSoonDone)
+      clearTimeout(timeoutFinalizing)
 
 
-              hasTrainRespone = false
-
-              trainConfirmBtn.classList.remove("hidden");
-              backTrainBtn.classList.remove("hidden")
+      trainConfirmBtn.classList.remove("hidden");
+      backTrainBtn.classList.remove("hidden")
 
     })
     .catch(error => console.error("Error:", error));

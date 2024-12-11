@@ -829,7 +829,7 @@ a.deletelink:focus, a.deletelink:hover {
     display: flex;
     flex-direction: column;
     height: 100%;
-    border: 2px red solid;
+    border: 2px green solid;
 }
 
 #container > div {
@@ -1231,14 +1231,18 @@ a.deletelink:focus, a.deletelink:hover {
 
 }
 
-#new-version-name-container {
-    background: blue;
-}
-
 .hidden  {
     display: hidden;
 }
 
-.transparent {
-    color: transparent;
+#training-res-output {
+    margin-bottom: 3px;
+}
+
+#new-version-model-content button {
+    margin-top: 10px;
+}
+
+#error-vers-prompt {
+    text-align: center;
 }
