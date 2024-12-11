@@ -1,13 +1,13 @@
 import os
 import sys
 import pickle
-from django.shortcuts import render, HttpResponse
+from django.shortcuts import render
 import subprocess
 from django.http import JsonResponse
 import json
 import csv
-from django.contrib.messages import get_messages, add_message
-from django.contrib.messages.constants import ERROR, SUCCESS, WARNING
+from django.http import JsonResponse
+from django.shortcuts import render
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -20,12 +20,12 @@ def home(request):
     return render(request, "home.html")
 
 def classify_resume(request):
-    predictions = None
     if request.method == 'POST':
         resume_text = request.POST.get('resumeStr', '')
         if resume_text:
-            predictions = predict_top_5_resume(resume_text, version)
-    return render(request, 'home.html', {'predictions': predictions})
+            predictions = predict_top_5_resume(resume_text)
+            return JsonResponse({'predictions': predictions})
+    return JsonResponse({'predictions': []})
 
 
 from django.shortcuts import render
