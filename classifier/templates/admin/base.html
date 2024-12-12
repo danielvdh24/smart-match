@@ -1,0 +1,712 @@
+{% load i18n static %}<!DOCTYPE html>
+{% get_current_language as LANGUAGE_CODE %}{% get_current_language_bidi as LANGUAGE_BIDI %}
+<html lang="{{ LANGUAGE_CODE|default:"en-us" }}" dir="{{ LANGUAGE_BIDI|yesno:'rtl,ltr,auto' }}">
+<head>
+<title>{% block title %}{% endblock %}</title>
+<link rel="stylesheet" href="{% block stylesheet %}{% static "admin/css/base.css" %}{% endblock %}">
+{% block dark-mode-vars %}
+  <link rel="stylesheet" href="{% static "admin/css/dark_mode.css" %}">
+  <script src="{% static "admin/js/theme.js" %}" defer></script>
+{% endblock %}
+{% if not is_popup and is_nav_sidebar_enabled %}
+  <link rel="stylesheet" href="{% static "admin/css/nav_sidebar.css" %}">
+  <script src="{% static 'admin/js/nav_sidebar.js' %}" defer></script>
+{% endif %}
+{% block extrastyle %}{% endblock %}
+{% if LANGUAGE_BIDI %}<link rel="stylesheet" href="{% block stylesheet_rtl %}{% static "admin/css/rtl.css" %}{% endblock %}">{% endif %}
+{% block extrahead %}{% endblock %}
+{% block responsive %}
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <link rel="stylesheet" href="{% static "admin/css/responsive.css" %}">
+    {% if LANGUAGE_BIDI %}<link rel="stylesheet" href="{% static "admin/css/responsive_rtl.css" %}">{% endif %}
+{% endblock %}
+{% block blockbots %}<meta name="robots" content="NONE,NOARCHIVE">{% endblock %}
+</head>
+
+<body class="{% if is_popup %}popup {% endif %}{% block bodyclass %}{% endblock %}"
+  data-admin-utc-offset="{% now "Z" %}">
+<a href="#content-start" class="skip-to-content-link">{% translate 'Skip to main content' %}</a>
+<!-- Container -->
+<div id="container">
+
+    {% if not is_popup %}
+    <!-- Header -->
+    {% block header %}
+    <div id="header">
+        <div id="branding">
+        {% block branding %}{% endblock %}
+        </div>
+        {% block usertools %}
+        {% if has_permission %}
+        <div id="user-tools">
+            {% block welcome-msg %}
+                {% translate 'Welcome,' %}
+                <strong>{% firstof user.get_short_name user.get_username %}</strong>.
+            {% endblock %}
+            {% block userlinks %}
+                {% if site_url %}
+                    <a href="{{ site_url }}">{% translate 'View site' %}</a> /
+                {% endif %}
+                {% if user.is_active and user.is_staff %}
+                    {% url 'django-admindocs-docroot' as docsroot %}
+                    {% if docsroot %}
+                        <a href="{{ docsroot }}">{% translate 'Documentation' %}</a> /
+                    {% endif %}
+                {% endif %}
+                {% if user.has_usable_password %}
+                <a href="{% url 'admin:password_change' %}">{% translate 'Change password' %}</a> /
+                {% endif %}
+                <form id="logout-form" method="post" action="{% url 'admin:logout' %}">
+                    {% csrf_token %}
+                    <button type="submit">{% translate 'Log out' %}</button>
+                </form>
+                {% include "admin/color_theme_toggle.html" %}
+            {% endblock %}
+        </div>
+        {% endif %}
+        {% endblock %}
+        {% block nav-global %}{% endblock %}
+    </div>
+    {% endblock %}
+    <!-- END Header -->
+    {% block nav-breadcrumbs %}
+      <nav aria-label="{% translate 'Breadcrumbs' %}">
+        {% block breadcrumbs %}
+          <div class="breadcrumbs">
+            <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+            {% if title %} &rsaquo; {{ title }}{% endif %}
+          </div>
+        {% endblock %}
+      </nav>
+    {% endblock %}
+    {% endif %}
+
+    <div class="main" id="main">
+      {% if not is_popup and is_nav_sidebar_enabled %}
+        {% block nav-sidebar %}
+          {% include "admin/nav_sidebar.html" %}
+        {% endblock %}
+      {% endif %}
+      <div id="content-start" class="content" tabindex="-1">
+        {% block messages %}
+          {% if messages %}
+            <ul class="messagelist">{% for message in messages %}
+              <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message|capfirst }}</li>
+            {% endfor %}</ul>
+          {% endif %}
+        {% endblock messages %}
+        <!-- Content -->
+        <div id="content" class="{% block coltype %}colM{% endblock %}">
+          {% block pretitle %}{% endblock %}
+          {% block title-modelchoices-container %}
+          <div id="title-modelchoices-container">
+              {% block content_title %}{% if title %}<h1>{{ title }}</h1>{% endif %}{% endblock %}
+              {% if title != "Logged out" %}
+              <div id="modelchoices-div">
+                <button id="train-new-model-btn" type="button">Train</button>
+                <button id="evaluate-model-btn" type="button">Evaluate</button>
+                <div id="dropdown-select-system-vers" class="dropdown">
+                  <button id="dropdown-content-select-system-vers-btn" class="dropbtn">-- Select Version --</button>
+                  <div class="dropdown-content" id="dropdown-content-select-system-vers"></div>
+                </div>
+                <div>Selected Model Version: <span id="selected-model-version">1.0.0</span><span id="model-update-success-prompt"> (Default)</span></div>
+
+                <form id="uploadCsvForm" enctype="multipart/form-data" method="post">
+                  {% csrf_token %}
+                  <input type="file" name="csv_file" id="csvFileInput">
+                  <button type="submit">Upload CSV</button>
+                </form>
+                <div id="uploadCsvMessage"></div>
+                <script>
+                  document.getElementById("uploadCsvForm").addEventListener("submit", async function (e) {
+                  e.preventDefault();
+
+                  const formData = new FormData();
+                  const fileInput = document.getElementById("csvFileInput");
+
+                  if (fileInput.files.length === 0) {
+                      document.getElementById("uploadCsvMessage").innerText = "Please select a file to upload.";
+                      return;
+                  }
+
+                  formData.append("csv_file", fileInput.files[0]);
+
+                  //CSRF token
+                  function getCsrfToken() {
+                      const csrfCookie = document.cookie.split("; ").find(row => row.startsWith("csrftoken="));
+                      return csrfCookie ? csrfCookie.split("=")[1] : null;
+                  }
+
+                  const csrfToken = getCsrfToken();
+
+                  try {
+                      const response = await fetch("{% url 'upload_csv' %}", {
+                          method: "POST",
+                          headers: {
+                              "X-CSRFToken": csrfToken
+                          },
+                          body: formData,
+                      });
+
+                      if (!response.ok) {
+                          throw new Error("Network response was not ok");
+                      }
+
+                      const result = await response.json();
+                      const messageElement = document.getElementById("uploadCsvMessage");
+
+                      messageElement.innerText = result.message;
+                  } catch (error) {
+                      document.getElementById("uploadCsvMessage").innerText = "Error uploading the file.";
+                      console.error(error);
+                  }
+              });
+              </script>            
+
+              </div>    
+              {% endif %}
+          </div>
+          {% endblock %}
+          {% block content_subtitle %}{% if subtitle %}<h2>{{ subtitle }}</h2>{% endif %}{% endblock %}
+          {% block content %}
+            {% block object-tools %}{% endblock %}
+            {{ content }}
+          {% endblock %}
+          {% block sidebar %}{% endblock %}
+          <br class="clear">
+        </div>
+        <!-- END Content -->
+        {% block footer %}<div id="footer"></div>{% endblock %}
+      </div>
+    </div>
+    <div id="new-version-model-modal-container" class="hidden">
+      <div id="new-version-model-modal">
+        <div id="new-version-model-content">
+          <div id="new-version-name-container">
+            <h2>Enter Name of New Version:</h2>
+          </div>
+          <div> Latest trained model version: <span id="latest-trained-vers"></span></div>
+          <input type="text" id="text-input-major" placeholder="Major (0) :" />
+          <input type="text" id="text-input-minor" placeholder="Minor (0) :" />
+          <input type="text" id="text-input-patch" placeholder="Patch (0) :" />
+          <div id="error-vers-prompt" class="hidden">"Error: Fill Each Input With Numbers Only"</div>
+          <div>
+            <button type="button" id="cancel-new-model-btn">Back</button>
+            <button id="train-confirm-new-model-btn" type="button">Train</button>
+<pre id="training-res-output" class="hidden">Training ...</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+
+    <div id="evaluation-modal-container" class="hidden">
+      <div id="evaluation-modal">
+        <div id="evaluation-content">
+          <div id="new-version-name-container">
+            <h2>Select model version to evaluate:</h2>
+          </div>
+
+          <div id="dropdown-select-eval-vers" class="dropdown">
+          <button id="dropdown-content-select-eval-vers-btn" class="dropbtn">-- Select Version --</button>
+          <div class="dropdown-content" id="dropdown-content-select-eval-vers"></div>
+          </div>
+
+          
+          <div id="error-evaluation-prompt" class="hidden">Error: Select a model version</div>
+          <div>
+            <button type="button" id="cancel-evaluation-btn">Back</button>
+            <button id="evaluate-confirm-btn" type="button">Evaluate</button>
+<pre id="evaluation-res-output" class="hidden">Training ...</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+</div>
+<!-- END Container -->
+
+<!-- SVGs -->
+<svg xmlns="http://www.w3.org/2000/svg" class="base-svgs">
+  <symbol viewBox="0 0 24 24" width="1rem" height="1rem" id="icon-auto"><path d="M0 0h24v24H0z" fill="currentColor"/><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2V4a8 8 0 1 0 0 16z"/></symbol>
+  <symbol viewBox="0 0 24 24" width="1rem" height="1rem" id="icon-moon"><path d="M0 0h24v24H0z" fill="currentColor"/><path d="M10 7a7 7 0 0 0 12 4.9v.1c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2h.1A6.979 6.979 0 0 0 10 7zm-6 5a8 8 0 0 0 15.062 3.762A9 9 0 0 1 8.238 4.938 7.999 7.999 0 0 0 4 12z"/></symbol>
+  <symbol viewBox="0 0 24 24" width="1rem" height="1rem" id="icon-sun"><path d="M0 0h24v24H0z" fill="currentColor"/><path d="M12 18a6 6 0 1 1 0-12 6 6 0 0 1 0 12zm0-2a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM11 1h2v3h-2V1zm0 19h2v3h-2v-3zM3.515 4.929l1.414-1.414L7.05 5.636 5.636 7.05 3.515 4.93zM16.95 18.364l1.414-1.414 2.121 2.121-1.414 1.414-2.121-2.121zm2.121-14.85l1.414 1.415-2.121 2.121-1.414-1.414 2.121-2.121zM5.636 16.95l1.414 1.414-2.121 2.121-1.414-1.414 2.121-2.121zM23 11v2h-3v-2h3zM4 11v2H1v-2h3z"/></symbol>
+</svg>
+<!-- END SVGs -->
+ <script>
+
+  // global state / event / transition variables
+  let timeoutInputError = 0
+  let timeoutSoonDone = 0
+  let timeoutFinalizing = 0
+  let timeoutModelUpdateSuccessPrompt = 0
+
+  let versionToBeEvaluated = ""
+
+    // Frequently targeted elements accross functions
+  const majorInput = document.getElementById("text-input-major");
+  const minorInput = document.getElementById("text-input-minor");
+  const patchInput = document.getElementById("text-input-patch");
+
+  const latestTrainedVers = document.getElementById("latest-trained-vers")
+
+  const trainConfirmBtn = document.getElementById("train-confirm-new-model-btn")
+
+  const backTrainBtn = document.getElementById("cancel-new-model-btn")
+
+  const trainingErrorDiv = document.getElementById("error-vers-prompt");
+
+  const trainingResOutput = document.getElementById("training-res-output")
+
+
+
+    const evaluationConfirmBtn = document.getElementById("evaluate-confirm-btn")
+
+  const backEvaluationBtn = document.getElementById("cancel-evaluation-btn")
+
+
+    const evaluationErrorDiv = document.getElementById("error-evaluation-prompt");
+
+  const evaluationResOutput = document.getElementById("evaluation-res-output")
+
+
+  const selectSystemVersBtn = document.getElementById("dropdown-content-select-system-vers-btn")
+
+  const selectEvaluationVersBtn =  document.getElementById("dropdown-content-select-eval-vers-btn")
+
+   const modelUpdateSuccessPrompt = document.getElementById("model-update-success-prompt")
+
+
+    // Get names of all model versions 
+    fetch("/fetch-all-models/", { // URL of the Django view
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"), // CSRF protection
+    }
+  }).then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        
+        dataOutputObj = data.output
+        console.log(dataOutputObj)
+        
+
+
+        
+
+        const dropdownContents = document.querySelectorAll('.dropdown-content');
+
+        dropdownContents.forEach((dropdownContent) => {
+        
+        const highestVersionFile = dataOutputObj.highest_version_file
+
+        const li = document.createElement('li');
+        li.textContent = `(Newest v) ${highestVersionFile}`;
+        li.id = `${dropdownContent.id}-${highestVersionFile}`
+        li.classList.add(`${highestVersionFile}`, "highest-version-file"); 
+
+        dropdownContent.appendChild(li);
+
+        dataOutputObj.model_files_restof.forEach(item =>  {
+          const li = document.createElement('li');
+          li.textContent = item
+          
+        li.id = `${dropdownContent.id}-${item}`
+        li.classList.add(item); // Add 
+
+          dropdownContent.appendChild(li);
+        });
+
+        })
+        
+
+
+
+  dropdownContents.forEach((dropdownContent) => {
+  // Loop through each child of the dropdownContent
+  dropdownContent.querySelectorAll('li').forEach((item) => {
+
+    // Add an event listener to log the id when clicked
+    item.addEventListener('click', () => {
+
+      parent = item.parentElement
+      selectedItem = item.className.split(' ')[0] // eg model_v1.0.0
+      selectedItemNumPart = selectedItem.split('model_v')[1]  // eg 1.0.0
+
+      if (parent.id == "dropdown-content-select-system-vers") {
+        
+        selectSystemVersBtn.textContent = selectedItem
+        document.getElementById("selected-model-version").textContent = selectedItemNumPart
+
+        selectSystemUsedModelVersion(selectedItemNumPart)
+        clearTimeout(timeoutModelUpdateSuccessPrompt)
+        modelUpdateSuccessPrompt.classList.add("hidden")
+                    
+      } else {
+        selectEvaluationVersBtn.textContent = selectedItem
+        versionToBeEvaluated = selectedItemNumPart
+      }
+    });
+  });
+});
+
+
+      } else {
+        dropdownContent.textContent = `Error: ${data.error}`;
+      }
+    })
+  .catch(error => console.error("Error:", error));
+
+
+  //Get info about latest model from server. Server vs client side job for this could be argued in this case server side job for this is chosen due to convenience and potential user side benefits (in terms of performance)
+  fetch("/fetch-latest-model/", { // URL of the Django view
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"), // CSRF protection
+    }
+  }).then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        latestTrainedVers.textContent = data.output;
+      } else {
+        latestTrainedVers.textContent = `Error: ${data.error}`;
+      }
+    })
+  .catch(error => console.error("Error:", error));
+
+
+document.getElementById("train-new-model-btn").addEventListener("click", function() {
+
+  const modal = document.getElementById("new-version-model-modal-container");
+  modal.classList.remove("hidden");
+
+});
+
+
+// Event listener for Back button to hide the modal
+document.getElementById("cancel-new-model-btn").addEventListener("click", function() {
+  const modal = document.getElementById("new-version-model-modal-container");
+  modal.classList.add("hidden");
+
+
+  // Reset certain states for a default-view look upon potential user re-entry to the train-model view again. 
+  trainingResOutput.classList.add("hidden");
+  trainingErrorDiv.classList.add("hidden");
+});
+
+
+trainConfirmBtn.addEventListener("click", function() {
+
+  const result = validateTrainInput()
+
+  if (result.isValid) {
+    
+
+    this.classList.add("hidden");
+    backTrainBtn.classList.add("hidden")
+    clearTimeout(timeoutInputError)
+    trainingErrorDiv.classList.add("hidden")
+    
+    versionPost(result.inputs)
+
+    trainingResOutput.textContent = "Training ..."
+    trainingResOutput.classList.remove("hidden")
+    
+    timeoutSoonDone = setTimeout(() => {
+        trainingResOutput.textContent = "Soon Done ...";
+    }, 12000);
+
+    timeoutFinalizing = setTimeout(() => {
+        trainingResOutput.textContent = "Finalizing ...";
+    }, 21000);
+
+  }
+});
+
+
+document.getElementById("evaluate-model-btn").addEventListener("click", function() {
+
+  const modal = document.getElementById("evaluation-modal-container");
+  modal.classList.remove("hidden");
+  
+})
+
+
+
+backEvaluationBtn.addEventListener("click", function() {
+  const modal = document.getElementById("evaluation-modal-container");
+  modal.classList.add("hidden");
+
+
+  // Reset certain states for a default-view look upon potential user re-entry to evaluation menu view again. 
+  evaluationResOutput.classList.add("hidden");
+  evaluationErrorDiv.classList.add("hidden");
+
+  selectEvaluationVersBtn.textContent = "-- Select Version --"
+  versionToBeEvaluated = ""
+});
+
+
+evaluationConfirmBtn.addEventListener("click", function() {
+
+
+
+  if (versionToBeEvaluated) {
+    
+
+    this.classList.add("hidden");
+    backEvaluationBtn.classList.add("hidden")
+    clearTimeout(timeoutInputError)
+    evaluationErrorDiv.classList.add("hidden")
+    
+    evaluateModelPost()
+
+    evaluationResOutput.textContent = "Evaluating ..."
+    evaluationResOutput.classList.remove("hidden")
+    
+    timeoutSoonDone = setTimeout(() => {
+        evaluationResOutput.textContent = "Soon Done ...";
+    }, 10000);
+
+    timeoutFinalizing = setTimeout(() => {
+        evaluationResOutput.textContent = "Finalizing ...";
+    }, 19000);
+
+  } else {
+
+            evaluationErrorDiv.classList.remove("hidden");
+
+        
+        clearTimeout(timeoutInputError)
+        timeoutInputError = setTimeout(() => {
+          evaluationErrorDiv.classList.add("hidden");
+        }, 5000);
+
+  }
+});
+
+function selectSystemUsedModelVersion(version){
+    fetch("/sys-vers-select-command/", { // URL of the Django view
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"), // CSRF protection
+    },
+    body: JSON.stringify(version)
+  })
+    .then(response => response.json())
+    .then(data => {
+      
+      modelUpdateSuccessPrompt.classList.remove("hidden")
+      
+      if (data.success) {
+
+       modelUpdateSuccessPrompt.textContent = " (Succesful Update!)"
+
+      } else {
+        modelUpdateSuccessPrompt.textContent = `Error: ${data.error}`;
+      }
+
+        clearTimeout(timeoutModelUpdateSuccessPrompt)
+        timeoutModelUpdateSuccessPrompt = setTimeout(() => {
+          modelUpdateSuccessPrompt.classList.add("hidden");
+        }, 6000);
+
+    })
+    .catch(error => console.error("Error:", error));
+}
+
+function evaluateModelPost(){
+
+  fetch("/evaluate-command/", { // URL of the Django view
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"), // CSRF protection
+    },
+    body: JSON.stringify(versionToBeEvaluated)
+  })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        evaluationResOutput.textContent = `Model_v${versionToBeEvaluated} scored an accuracy of ${data.output}!`;
+
+        selectEvaluationVersBtn.textContent = "-- Select Version --"
+        versionToBeEvaluated = ""
+
+      } else {
+        evaluationResOutput.textContent = `Error: ${data.error}`;
+      }
+
+      // Resets certain states for some prompts to "neutral"
+
+
+      clearTimeout(timeoutSoonDone)
+      clearTimeout(timeoutFinalizing)
+
+
+      evaluationConfirmBtn.classList.remove("hidden");
+      backEvaluationBtn.classList.remove("hidden")
+
+    })
+    .catch(error => console.error("Error:", error));
+
+}
+
+
+function validateTrainInput(){
+
+      // Validate inputs
+      const inputs = [majorInput, minorInput, patchInput];
+      let isCorrectInputDataType = true;
+      let isCorrectVersionIncrement = true;
+      let inputtedVersionsParts = []
+      inputs.forEach(input => {
+        const val = input.value
+        if (!/^\d*$/.test(val) || val == "") {
+          isCorrectInputDataType = false;
+          return; // Stop further iteration if invalid input is found
+        }
+
+        inputtedVersionsParts.push(val)
+      });
+
+
+      if (isCorrectInputDataType) {
+
+        const latestVersString = latestTrainedVers.textContent
+
+        const versionMatch = latestVersString.match(/\d+\.\d+\.\d+/);
+
+        const latestVersionsParts = versionMatch[0].split('.')
+
+
+        // Convert elements to integers to AVOID lexicographic comparison (e.g., '10000000' < '9' == true for strings)
+        for (let i = 0; i < inputtedVersionsParts.length; i++) {
+          inputtedVersionsParts[i] = parseInt(inputtedVersionsParts[i], 10);
+          latestVersionsParts[i] = parseInt(latestVersionsParts[i], 10);
+        }
+
+
+        // Check each :nth place in semvar version input to ensure correct planned version increment
+        if ((inputtedVersionsParts[0] < latestVersionsParts[0])){
+
+          isCorrectVersionIncrement = false
+          
+        } else if (inputtedVersionsParts[0] == latestVersionsParts[0]){
+        
+          if (inputtedVersionsParts[1] <  latestVersionsParts[1]) {
+
+            isCorrectVersionIncrement = false
+
+          } else if (inputtedVersionsParts[1] == latestVersionsParts[1]){
+
+            if (inputtedVersionsParts[2] <= latestVersionsParts[2]){
+                            
+              isCorrectVersionIncrement = false
+            }
+          }
+        }
+      }
+
+      // Show error message if invalid input found
+      if (!isCorrectInputDataType || !isCorrectVersionIncrement) {
+
+        trainingErrorDiv.classList.remove("hidden");
+        trainingErrorDiv.textContent =  (!isCorrectInputDataType) ? "Error: Fill Each Input With Numbers Only" : "Error: Version Has To Increment"
+        
+        clearTimeout(timeoutInputError)
+        timeoutInputError = setTimeout(() => {
+          trainingErrorDiv.classList.add("hidden");
+        }, 5000);
+
+        inputs.forEach(input => {
+          input.value = ""
+        })
+
+      }
+
+      return {isValid: isCorrectInputDataType & isCorrectVersionIncrement, inputs: inputs.map((input) => input.value)};
+}
+
+
+
+function versionPost(inputs){
+
+  fetch("/train-command/", { // URL of the Django view
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"), // CSRF protection
+    },
+    body: JSON.stringify(inputs),
+  })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        trainingResOutput.textContent = data.output;
+
+        const versionMatch = data.output.match(/\d+\.\d+\.\d+/);
+
+        const versionString = versionMatch[0]
+
+        liHighestItems = document.querySelectorAll(".highest-version-file")
+
+        liHighestItems.forEach((item) => {
+          item.textContent = `(Newest v) model_v${versionString}`
+          item.className  = ""
+          item.classList.add(`model_v${versionString}`, "highest-version-file");
+        })
+
+        latestTrainedVers.textContent = `model_v${versionString}`
+
+
+
+      } else {
+        trainingResOutput.textContent = `Error: ${data.error}`;
+      }
+
+
+      // Resets certain states for some prompts to "neutral"
+      majorInput.value = ""
+      minorInput.value = ""
+      patchInput.value = ""
+
+
+      clearTimeout(timeoutSoonDone)
+      clearTimeout(timeoutFinalizing)
+
+
+      trainConfirmBtn.classList.remove("hidden");
+      backTrainBtn.classList.remove("hidden")
+
+    })
+    .catch(error => console.error("Error:", error));
+    
+}
+
+
+
+// Helper function to get the CSRF token from cookies
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+
+ </script>
+</body>
+</html>
