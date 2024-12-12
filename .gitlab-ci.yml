@@ -39,6 +39,7 @@ build-and-deploy:
     - gcloud container clusters get-credentials $GOOGLE_CLUSTER --region $GOOGLE_REGION
     
     # Build the latest image (production image)
+    - docker info
     - docker build -f Dockerfile.server . -t $DEPLOYED_DOCKER_IMAGE:$DOCKER_TAG
     - docker push $DEPLOYED_DOCKER_IMAGE:$DOCKER_TAG  # Push the image to GCR
 
