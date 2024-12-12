@@ -28,9 +28,10 @@ build-and-deploy:
   image: google/cloud-sdk:latest  # Use the Google Cloud SDK Docker image
   tags:
     - docker-build
+  services:
+    - docker:dind  # Use Docker-in-Docker
   script:
     # Decode the base64-encoded service account key and store it as gcloud-key.json
-    - echo "$GCLOUD_SERVICE_KEY"
     - echo $GCLOUD_SERVICE_KEY | base64 -d > $CI_PROJECT_DIR/gcloud-key.json
     # Authenticate to Google Cloud with the decoded service account key
     - gcloud auth activate-service-account --key-file $CI_PROJECT_DIR/gcloud-key.json
