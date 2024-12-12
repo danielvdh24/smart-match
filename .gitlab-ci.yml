@@ -42,6 +42,7 @@ build-and-deploy:
     # Build the latest image (production image)
     - docker info
     - docker build -f Dockerfile.server . -t $DEPLOYED_DOCKER_IMAGE:$DOCKER_TAG
+    - gcloud auth configure-docker
     - docker push $DEPLOYED_DOCKER_IMAGE:$DOCKER_TAG  # Push the image to GCR
 
     # Deploy to GKE cluster
