@@ -23,7 +23,7 @@ def classify_resume(request):
     if request.method == 'POST':
         resume_text = request.POST.get('resumeStr', '')
         if resume_text:
-            predictions = predict_top_5_resume(resume_text)
+            predictions = predict_top_5_resume(resume_text, version)
             return JsonResponse({'predictions': predictions})
     return JsonResponse({'predictions': []})
 
@@ -76,7 +76,6 @@ def train_command(request):
             body = json.loads(body_unicode)  # Parse JSON into dictionary
             print(body)
             
-            # global version
             version = '.'.join(body)
 
            # Execute the command
@@ -112,6 +111,21 @@ def evaluate_command(request):
         except Exception as e:
             return JsonResponse({"success": False, "error": "Invalid request: " + str(e)})
 
+def sys_vers_select_command(request):
+    if request.method == "POST":
+        try:
+            body_unicode = request.body.decode('utf-8')  # Decode byte stream
+            body = json.loads(body_unicode)  # Parse JSON into dictionary
+
+            global version
+            version = body
+            print(version)
+
+            return JsonResponse({"success": True})
+        except subprocess.CalledProcessError as e:
+            return JsonResponse({"success": False, "error": str(e)})
+        except Exception as e:
+            return JsonResponse({"success": False, "error": "Invalid request: " + str(e)})
 
 
 

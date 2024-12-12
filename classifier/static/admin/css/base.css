@@ -1248,5 +1248,9 @@ a.deletelink:focus, a.deletelink:hover {
 
 .highest-version-file {
     font-style: italic;
-    background-color: #86cc5eaf;
+    background-color: #86cc5ed6;
+}
+
+#selected-model-version {
+    font-style: italic;
 }

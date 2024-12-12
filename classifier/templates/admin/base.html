@@ -109,6 +109,7 @@
                   <button id="dropdown-content-select-system-vers-btn" class="dropbtn">-- Select Version --</button>
                   <div class="dropdown-content" id="dropdown-content-select-system-vers"></div>
                 </div>
+                <div>Selected Model Version: <span id="selected-model-version">1.0.0</span><span id="model-update-success-prompt"> (Default)</span></div>
 
                 <form id="uploadCsvForm" enctype="multipart/form-data" method="post">
                   {% csrf_token %}
@@ -239,6 +240,7 @@
   let timeoutInputError = 0
   let timeoutSoonDone = 0
   let timeoutFinalizing = 0
+  let timeoutModelUpdateSuccessPrompt = 0
 
   let versionToBeEvaluated = ""
 
@@ -273,6 +275,7 @@
 
   const selectEvaluationVersBtn =  document.getElementById("dropdown-content-select-eval-vers-btn")
 
+   const modelUpdateSuccessPrompt = document.getElementById("model-update-success-prompt")
 
 
     // Get names of all model versions 
@@ -321,7 +324,7 @@
 
 
 
-        dropdownContents.forEach((dropdownContent) => {
+  dropdownContents.forEach((dropdownContent) => {
   // Loop through each child of the dropdownContent
   dropdownContent.querySelectorAll('li').forEach((item) => {
 
@@ -329,21 +332,22 @@
     item.addEventListener('click', () => {
 
       parent = item.parentElement
+      selectedItem = item.className.split(' ')[0] // eg model_v1.0.0
+      selectedItemNumPart = selectedItem.split('model_v')[1]  // eg 1.0.0
 
       if (parent.id == "dropdown-content-select-system-vers") {
-        console.log("amazing")
-        console.log(item)
         
-        selectSystemVersBtn.textContent = item.className.split(' ')[0]
+        selectSystemVersBtn.textContent = selectedItem
+        document.getElementById("selected-model-version").textContent = selectedItemNumPart
 
+        selectSystemUsedModelVersion(selectedItemNumPart)
+        clearTimeout(timeoutModelUpdateSuccessPrompt)
+        modelUpdateSuccessPrompt.classList.add("hidden")
+                    
       } else {
-       selectEvaluationVersBtn.textContent = item.className.split(' ')[0]
-
-      versionToBeEvaluated = item.className.split(' ')[0].split('model_v')[1] // Gets number part like 1.0.0
-        
+        selectEvaluationVersBtn.textContent = selectedItem
+        versionToBeEvaluated = selectedItemNumPart
       }
-
-
     });
   });
 });
@@ -413,7 +417,7 @@ trainConfirmBtn.addEventListener("click", function() {
     
     timeoutSoonDone = setTimeout(() => {
         trainingResOutput.textContent = "Soon Done ...";
-    }, 13000);
+    }, 12000);
 
     timeoutFinalizing = setTimeout(() => {
         trainingResOutput.textContent = "Finalizing ...";
@@ -465,7 +469,7 @@ evaluationConfirmBtn.addEventListener("click", function() {
     
     timeoutSoonDone = setTimeout(() => {
         evaluationResOutput.textContent = "Soon Done ...";
-    }, 11000);
+    }, 10000);
 
     timeoutFinalizing = setTimeout(() => {
         evaluationResOutput.textContent = "Finalizing ...";
@@ -484,7 +488,36 @@ evaluationConfirmBtn.addEventListener("click", function() {
   }
 });
 
+function selectSystemUsedModelVersion(version){
+    fetch("/sys-vers-select-command/", { // URL of the Django view
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"), // CSRF protection
+    },
+    body: JSON.stringify(version)
+  })
+    .then(response => response.json())
+    .then(data => {
+      
+      modelUpdateSuccessPrompt.classList.remove("hidden")
+      
+      if (data.success) {
 
+       modelUpdateSuccessPrompt.textContent = " (Succesful Update!)"
+
+      } else {
+        modelUpdateSuccessPrompt.textContent = `Error: ${data.error}`;
+      }
+
+        clearTimeout(timeoutModelUpdateSuccessPrompt)
+        timeoutModelUpdateSuccessPrompt = setTimeout(() => {
+          modelUpdateSuccessPrompt.classList.add("hidden");
+        }, 6000);
+
+    })
+    .catch(error => console.error("Error:", error));
+}
 
 function evaluateModelPost(){
 
