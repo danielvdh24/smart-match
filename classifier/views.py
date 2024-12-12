@@ -7,6 +7,7 @@ import json
 import csv
 from django.http import JsonResponse
 from django.shortcuts import render
+import re
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -86,6 +87,31 @@ def train_command(request):
         except subprocess.CalledProcessError as e:
             return JsonResponse({"success": False, "error": str(e)})
     return JsonResponse({"success": False, "error": "Invalid request"})
+
+
+def evaluate_command(request):
+    if request.method == "POST":
+        try:
+            body_unicode = request.body.decode('utf-8')  # Decode byte stream
+            body = json.loads(body_unicode)  # Parse JSON into dictionary
+
+           # Execute the command
+            result = subprocess.check_output(['python', 'ml_model.py', 'evaluate', '--version', body], text=True)
+           
+            # Apply regex to find "Accuracy:.*"
+            match = re.search(r'Accuracy:.*', result)
+            output = ""
+            if match:
+                output = match.group(0)
+            else:
+                output = "Accuracy not found in result"
+
+            return JsonResponse({"success": True, "output": output})
+        except subprocess.CalledProcessError as e:
+            return JsonResponse({"success": False, "error": str(e)})
+        except Exception as e:
+            return JsonResponse({"success": False, "error": "Invalid request: " + str(e)})
+
 
 
 

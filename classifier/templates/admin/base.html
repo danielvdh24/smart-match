@@ -106,7 +106,7 @@
                 <button id="train-new-model-btn" type="button">Train</button>
                 <button id="evaluate-model-btn" type="button">Evaluate</button>
                 <div id="dropdown-select-system-vers" class="dropdown">
-                  <button id="dropdown-content-select-system-vers-btn" class="dropbtn">--- Select Version ---</button>
+                  <button id="dropdown-content-select-system-vers-btn" class="dropbtn">-- Select Version --</button>
                   <div class="dropdown-content" id="dropdown-content-select-system-vers"></div>
                 </div>
 
@@ -207,16 +207,16 @@
           </div>
 
           <div id="dropdown-select-eval-vers" class="dropdown">
-          <button id="dropdown-content-select-eval-vers-btn" class="dropbtn">--- Select Version ---</button>
+          <button id="dropdown-content-select-eval-vers-btn" class="dropbtn">-- Select Version --</button>
           <div class="dropdown-content" id="dropdown-content-select-eval-vers"></div>
           </div>
 
           
-          <div id="error-vers-prompt" class="hidden">"Error: Fill Each Input With Numbers Only"</div>
+          <div id="error-evaluation-prompt" class="hidden">Error: Select a model version</div>
           <div>
             <button type="button" id="cancel-evaluation-btn">Back</button>
-            <button id="train-confirm-new-model-btn" type="button">Evaluate</button>
-<pre id="training-res-output" class="hidden">Training ...</pre>
+            <button id="evaluate-confirm-btn" type="button">Evaluate</button>
+<pre id="evaluation-res-output" class="hidden">Training ...</pre>
           </div>
         </div>
       </div>
@@ -240,6 +240,7 @@
   let timeoutSoonDone = 0
   let timeoutFinalizing = 0
 
+  let versionToBeEvaluated = ""
 
     // Frequently targeted elements accross functions
   const majorInput = document.getElementById("text-input-major");
@@ -255,6 +256,22 @@
   const trainingErrorDiv = document.getElementById("error-vers-prompt");
 
   const trainingResOutput = document.getElementById("training-res-output")
+
+
+
+    const evaluationConfirmBtn = document.getElementById("evaluate-confirm-btn")
+
+  const backEvaluationBtn = document.getElementById("cancel-evaluation-btn")
+
+
+    const evaluationErrorDiv = document.getElementById("error-evaluation-prompt");
+
+  const evaluationResOutput = document.getElementById("evaluation-res-output")
+
+
+  const selectSystemVersBtn = document.getElementById("dropdown-content-select-system-vers-btn")
+
+  const selectEvaluationVersBtn =  document.getElementById("dropdown-content-select-eval-vers-btn")
 
 
 
@@ -279,11 +296,13 @@
         const dropdownContents = document.querySelectorAll('.dropdown-content');
 
         dropdownContents.forEach((dropdownContent) => {
+        
+        const highestVersionFile = dataOutputObj.highest_version_file
 
         const li = document.createElement('li');
-        li.textContent = `(Newest) ${dataOutputObj.highest_version_file}`;
-        li.id = `${dropdownContent.id}-${dataOutputObj.highest_version_file}`
-        li.classList.add(`${dataOutputObj.highest_version_file}`, "highest-version-file"); 
+        li.textContent = `(Newest v) ${highestVersionFile}`;
+        li.id = `${dropdownContent.id}-${highestVersionFile}`
+        li.classList.add(`${highestVersionFile}`, "highest-version-file"); 
 
         dropdownContent.appendChild(li);
 
@@ -315,10 +334,13 @@
         console.log("amazing")
         console.log(item)
         
-        document.getElementById("dropdown-content-select-system-vers-btn").textContent = item.className.split(' ')[0]
+        selectSystemVersBtn.textContent = item.className.split(' ')[0]
 
       } else {
-        document.getElementById("dropdown-content-select-eval-vers-btn").textContent = item.className.split(' ')[0]
+       selectEvaluationVersBtn.textContent = item.className.split(' ')[0]
+
+      versionToBeEvaluated = item.className.split(' ')[0].split('model_v')[1] // Gets number part like 1.0.0
+        
       }
 
 
@@ -374,7 +396,7 @@ document.getElementById("cancel-new-model-btn").addEventListener("click", functi
 
 trainConfirmBtn.addEventListener("click", function() {
 
-  const result = validate()
+  const result = validateTrainInput()
 
   if (result.isValid) {
     
@@ -391,11 +413,11 @@ trainConfirmBtn.addEventListener("click", function() {
     
     timeoutSoonDone = setTimeout(() => {
         trainingResOutput.textContent = "Soon Done ...";
-    }, 11000);
+    }, 13000);
 
     timeoutFinalizing = setTimeout(() => {
         trainingResOutput.textContent = "Finalizing ...";
-    }, 19000);
+    }, 21000);
 
   }
 });
@@ -410,25 +432,99 @@ document.getElementById("evaluate-model-btn").addEventListener("click", function
 
 
 
-document.getElementById("cancel-evaluation-btn").addEventListener("click", function() {
+backEvaluationBtn.addEventListener("click", function() {
   const modal = document.getElementById("evaluation-modal-container");
   modal.classList.add("hidden");
 
 
-  // Reset certain states for a default-view look upon potential user re-entry to the train-model view again. 
-  trainingResOutput.classList.add("hidden");
-  trainingErrorDiv.classList.add("hidden");
+  // Reset certain states for a default-view look upon potential user re-entry to evaluation menu view again. 
+  evaluationResOutput.classList.add("hidden");
+  evaluationErrorDiv.classList.add("hidden");
+
+  selectEvaluationVersBtn.textContent = "-- Select Version --"
+  versionToBeEvaluated = ""
+});
+
+
+evaluationConfirmBtn.addEventListener("click", function() {
+
+
+
+  if (versionToBeEvaluated) {
+    
+
+    this.classList.add("hidden");
+    backEvaluationBtn.classList.add("hidden")
+    clearTimeout(timeoutInputError)
+    evaluationErrorDiv.classList.add("hidden")
+    
+    evaluateModelPost()
+
+    evaluationResOutput.textContent = "Evaluating ..."
+    evaluationResOutput.classList.remove("hidden")
+    
+    timeoutSoonDone = setTimeout(() => {
+        evaluationResOutput.textContent = "Soon Done ...";
+    }, 11000);
+
+    timeoutFinalizing = setTimeout(() => {
+        evaluationResOutput.textContent = "Finalizing ...";
+    }, 19000);
+
+  } else {
+
+            evaluationErrorDiv.classList.remove("hidden");
+
+        
+        clearTimeout(timeoutInputError)
+        timeoutInputError = setTimeout(() => {
+          evaluationErrorDiv.classList.add("hidden");
+        }, 5000);
+
+  }
 });
 
 
 
+function evaluateModelPost(){
+
+  fetch("/evaluate-command/", { // URL of the Django view
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"), // CSRF protection
+    },
+    body: JSON.stringify(versionToBeEvaluated)
+  })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        evaluationResOutput.textContent = `Model_v${versionToBeEvaluated} scored an accuracy of ${data.output}!`;
+
+        selectEvaluationVersBtn.textContent = "-- Select Version --"
+        versionToBeEvaluated = ""
+
+      } else {
+        evaluationResOutput.textContent = `Error: ${data.error}`;
+      }
+
+      // Resets certain states for some prompts to "neutral"
 
 
+      clearTimeout(timeoutSoonDone)
+      clearTimeout(timeoutFinalizing)
 
 
+      evaluationConfirmBtn.classList.remove("hidden");
+      backEvaluationBtn.classList.remove("hidden")
+
+    })
+    .catch(error => console.error("Error:", error));
+
+}
 
 
-function validate(){
+function validateTrainInput(){
 
       // Validate inputs
       const inputs = [majorInput, minorInput, patchInput];
@@ -524,13 +620,16 @@ function versionPost(inputs){
 
         const versionString = versionMatch[0]
 
-        // Update the latest trained model hint
-        latestTrainedVers.textContent = `model_v${versionString} -- latest --`
+        liHighestItems = document.querySelectorAll(".highest-version-file")
 
-        // Add newly trained model to list of available models
-        const li = document.createElement('li');
-        li.textContent = `model_v${versionString}`;
-        dropdownContent.appendChild(li);
+        liHighestItems.forEach((item) => {
+          item.textContent = `(Newest v) model_v${versionString}`
+          item.className  = ""
+          item.classList.add(`model_v${versionString}`, "highest-version-file");
+        })
+
+        latestTrainedVers.textContent = `model_v${versionString}`
+
 
 
       } else {

@@ -95,7 +95,6 @@ def evaluate_model(version="1.0.0"):
     print("\nModel Evaluation:")
     print(classification_report(y_test, y_pred, zero_division=0))
 
-
     accuracy = accuracy_score(y_test, y_pred)
     print(f"Accuracy: {accuracy:.2f}")
 
