@@ -20,7 +20,7 @@ build-and-test:
     - docker:dind  # Use Docker-in-Docker
   script:
     - docker info  # Verify Docker is running and accessible
-    - docker build --no-cache -f Dockerfile.server -t $DOCKER_IMAGE .
+    - docker build -f Dockerfile.test -t $DOCKER_IMAGE .  # Build the Docker image
     - docker run --rm $DOCKER_IMAGE  # Run the container to execute tests
 
 build-and-deploy:
@@ -41,7 +41,7 @@ build-and-deploy:
     
     # Build the latest image (production image)
     - docker info
-    - docker build -f Dockerfile.server . -t $DEPLOYED_DOCKER_IMAGE:$DOCKER_TAG
+    - docker build --no-cache -f Dockerfile.server . -t $DEPLOYED_DOCKER_IMAGE:$DOCKER_TAG
     - gcloud auth configure-docker
     - docker push $DEPLOYED_DOCKER_IMAGE:$DOCKER_TAG  # Push the image to GCR
 
