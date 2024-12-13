@@ -28,6 +28,8 @@ build-and-deploy:
   image: google/cloud-sdk:latest  # Use the Google Cloud SDK Docker image
   tags:
     - docker-build
+  services:
+    - docker:dind  # Use Docker-in-Docker
   script:
     # Decode the base64-encoded service account key and store it as gcloud-key.json
     - echo $GCLOUD_SERVICE_KEY | base64 -d > $CI_PROJECT_DIR/gcloud-key.json
@@ -38,7 +40,9 @@ build-and-deploy:
     - gcloud container clusters get-credentials $GOOGLE_CLUSTER --region $GOOGLE_REGION
     
     # Build the latest image (production image)
+    - docker info
     - docker build -f Dockerfile.server . -t $DEPLOYED_DOCKER_IMAGE:$DOCKER_TAG
+    - gcloud auth configure-docker
     - docker push $DEPLOYED_DOCKER_IMAGE:$DOCKER_TAG  # Push the image to GCR
 
     # Deploy to GKE cluster
