@@ -47,4 +47,5 @@ build-and-deploy:
 
     # Deploy to GKE cluster
     - kubectl set image deployment/resumeapp resumeapp=$DEPLOYED_DOCKER_IMAGE:$DOCKER_TAG
+    - kubectl apply -f resumeapp-deploy.yaml
     - kubectl rollout status deployment/resumeapp
