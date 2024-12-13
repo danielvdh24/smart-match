@@ -17,6 +17,7 @@ spec:
       containers:
         - name: resumeapp
           image: gcr.io/focused-sprite-443911-p2/resumeapp:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8000
 ---
