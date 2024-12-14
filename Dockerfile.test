@@ -36,4 +36,4 @@ RUN echo "conda activate resume_env" >> ~/.bashrc
 EXPOSE 8000
 
 # Run Django tests
-CMD ["bash", "-c", "source ~/.bashrc && python manage.py test"]
+CMD ["bash", "-c", "source ~/.bashrc && pytest"]
