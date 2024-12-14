@@ -13,6 +13,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from ml_model import predict_top_5_resume
 from populate_database import populate_database
+from .models import PredictionLog
 
 version =  "1.0.0"
 
@@ -24,6 +25,11 @@ def classify_resume(request):
         resume_text = request.POST.get('resumeStr', '')
         if resume_text:
             predictions = predict_top_5_resume(resume_text, version)
+            if predictions:
+                PredictionLog.objects.create(
+                    resume_text=resume_text,
+                    prediction_result=", ".join(predictions)
+                )
             return JsonResponse({'predictions': predictions})
     return JsonResponse({'predictions': []})
 
