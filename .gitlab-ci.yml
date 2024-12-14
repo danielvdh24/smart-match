@@ -17,7 +17,7 @@ build-and-test:
   tags:
     - docker-build  # Runner tag for the combined build-and-test stage
   services:
-    - docker:19.03.1-dind  # Use Docker-in-Docker
+    - docker:20.10.10-dind # Use Docker-in-Docker
   script:
     - docker info  # Verify Docker is running and accessible
     - docker build -f Dockerfile.test -t $DOCKER_IMAGE .  # Build the Docker image
@@ -29,7 +29,7 @@ build-and-deploy:
   tags:
     - docker-build
   services:
-    - docker:19.03.1-dind  # Use Docker-in-Docker
+    - docker:20.10.10-dind  # Use Docker-in-Docker
   script:
     # Decode the base64-encoded service account key and store it as gcloud-key.json
     - echo $GCLOUD_SERVICE_KEY | base64 -d > $CI_PROJECT_DIR/gcloud-key.json
