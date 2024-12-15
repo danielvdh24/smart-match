@@ -14,8 +14,15 @@ class ClassifierAdminArea(admin.AdminSite):
 # Create an instance of the custom AdminSite
 classifier_site = ClassifierAdminArea(name="ClassifierAdmin")
 
+# Customize the PredictionLog display
+class PredictionLogAdmin(admin.ModelAdmin):
+    list_display = ('timestamp', 'resume_text', 'prediction_result')
+    search_fields = ('resume_text', 'prediction_result')
+    list_filter = ('timestamp',)
+
 # Register the model with the custom admin site
 classifier_site.register(models.Resume)
+classifier_site.register(models.PredictionLog)
 
 # If you want to add more models to the custom admin site, you can do so here
 # classifier_site.register(models.YourModel)
