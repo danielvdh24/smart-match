@@ -7,16 +7,27 @@ Job Matcher leverages machine learning to classify resumes and recommend the top
 ## Purpose
 This project aims to develop an AI-driven solution that helps job seekers find suitable roles by analyzing their experience and preferences. Traditional job searching often relies on keyword-based engines, resulting in inefficient matches. By addressing this gap, the system enhances job matching accuracy, reducing the time and effort for job seekers.
 
+## Prerequisites
+Before you begin, make sure you have the following installed:
+- Anaconda: Required for managing the Python environment
+- Git LFS: Needed to handle large files in the repository
+
+To install Git LFS, run:
+```
+git lfs install
+```
+
 ## Getting Started
 To install and run our system, complete the following steps:
 
 1. Clone this repository with:  
 ```
-git clone git@git.chalmers.se:courses/dit826/2024/group8.git
+git clone git@github.com:danielvdh24/smart-match.git
 ```
 2. Set up the environment:
 ```
-cd group8
+cd smart-match
+git lfs pull
 conda env create -f environment.yml
 conda activate resume_env
 ```
@@ -50,7 +61,7 @@ python manage.py runserver
     </td>
     <td align="center" style="height: 180px; text-align: center;">
       <img src="https://secure.gravatar.com/avatar/3056b6827d3d959ea87306c4d2dd0c6a?s=800&d=identicon" width="100px;"/>
-      <br/><sub><b>Daniel</b></sub><br>@danielvdh24
+      <br/><sub><b>Daniel</b></sub><br>@heuvel
     </td>
   </tr>
 </table>
