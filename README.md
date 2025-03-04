@@ -1,8 +1,8 @@
 <div align="center">
-    <img src="https://github.com/user-attachments/assets/d3260680-a420-4d0d-9a12-a78d3fdc61c4" height="370px">
+    <img src="https://github.com/user-attachments/assets/41c7ce7b-e204-4c57-a447-5947354ba979" height="370px">
 </div>
 
-**Job Matcher** leverages machine learning to classify resumes and recommend the top five matching job roles based on textual analysis. The system integrates a user-friendly web interface with a backend prediction model and ensures efficient and accurate job-role mapping. Ideal for resume screening and career guidance tools.
+Job Matcher leverages machine learning to classify resumes and recommend the top five matching job roles based on textual analysis. The system integrates a user-friendly web interface with a backend prediction model and ensures efficient and accurate job-role mapping. Ideal for resume screening and career guidance tools.
 
 ## Purpose
 This project aims to develop an AI-driven solution that helps job seekers find suitable roles by analyzing their experience and preferences. Traditional job searching often relies on keyword-based engines, resulting in inefficient matches. By addressing this gap, the system enhances job matching accuracy, reducing the time and effort for job seekers.
@@ -20,7 +20,10 @@ cd group8
 conda env create -f environment.yml
 conda activate resume_env
 ```
-3. Next steps are Docker setup how?
+3. Run the project locally:
+```
+python manage.py runserver
+```
 
 ## Contributers
 <table>
@@ -39,7 +42,7 @@ conda activate resume_env
     </td>
     <td align="center" style="height: 180px; text-align: center;">
       <img src="https://secure.gravatar.com/avatar/3271ba4e481b7c393b650b96a17344d0?s=800&d=identicon" width="100px;"/>
-      <br/><sub><b>Kai</b></sub><br>@rowley
+      <br/><sub><b>Kai</b></sub><br>@irmata
     </td>
     <td align="center" style="height: 180px; text-align: center;">
       <img src="https://secure.gravatar.com/avatar/9890e58b0957bc5f73b568160ee6d16580e4a94223897bcb83fa0698f03c6a3b?s=384&d=identicon" width="100px;"/>
@@ -47,7 +50,7 @@ conda activate resume_env
     </td>
     <td align="center" style="height: 180px; text-align: center;">
       <img src="https://secure.gravatar.com/avatar/3056b6827d3d959ea87306c4d2dd0c6a?s=800&d=identicon" width="100px;"/>
-      <br/><sub><b>Daniel</b></sub><br>@heuvel
+      <br/><sub><b>Daniel</b></sub><br>@danielvdh24
     </td>
   </tr>
 </table>
